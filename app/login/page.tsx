@@ -5,18 +5,25 @@ import { createClient } from '@/lib/supabase/client';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function go(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return; // single-flight: Supabase rate-limits OTP emails
+    setBusy(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/account` },
-    });
-    if (error) setError(error.message);
-    else setSent(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/account` },
+      });
+      if (error) setError(error.message);
+      else setSent(true);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -28,7 +35,7 @@ export default function LoginPage() {
       ) : (
         <form onSubmit={go} className="card mt-6 space-y-3">
           <div><label className="label">Email</label><input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-          <button className="btn-primary w-full">Send magic link</button>
+          <button className="btn-primary w-full" disabled={busy}>{busy ? 'Sending…' : 'Send magic link'}</button>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
         </form>
       )}
