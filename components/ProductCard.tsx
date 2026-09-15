@@ -22,6 +22,7 @@ export function ProductCard({ p }: { p: ProductCardData }) {
         )}
       </div>
       <h3 className="mt-3 font-semibold leading-snug">{p.title}</h3>
+      <p className="mt-0.5 text-xs text-zinc-400">⚡ Instant download · Secure token</p>
       {p.short_description ? <p className="mt-1 line-clamp-2 text-sm text-zinc-600">{p.short_description}</p> : null}
       <div className="mt-3 flex items-center justify-between">
         <span className="font-bold">{formatPrice(Number(p.price), p.currency ?? 'USD')}</span>
