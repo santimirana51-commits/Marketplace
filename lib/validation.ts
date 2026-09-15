@@ -25,7 +25,8 @@ export const adminProductSchema = z.object({
 });
 
 export const adminFileSchema = z.object({
-  name: z.string().min(1).max(300),
+  // Optional: empty falls back to the Drive file name server-side.
+  name: z.string().max(300).default(''),
   google_drive_file_id: z.string().min(5).max(300),
 });
 
