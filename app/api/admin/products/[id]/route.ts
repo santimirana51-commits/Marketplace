@@ -1,7 +1,7 @@
 import { requireAdmin } from '@/lib/auth';
 import { adminClient } from '@/lib/supabase/admin';
 import { adminFileSchema, adminProductSchema, errResponse } from '@/lib/validation';
-import { validateDriveFile, extractDriveFileId } from '@/lib/google-drive';
+import { validateDriveFile, extractDriveFileId, isDriveConfigured } from '@/lib/google-drive';
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -28,6 +28,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         if (error) return errResponse(error.message, 400);
         return Response.json({ file: data }, { status: 201 });
       } catch {
+        // Distinguish missing server credentials (500, admin-only) from a
+        // genuinely unreadable file (404) so this is diagnosable.
+        if (!isDriveConfigured()) {
+          return errResponse('Server Drive credentials missing — set service-account envs', 500);
+        }
         return errResponse('Drive file not found or inaccessible', 404);
       }
     }
