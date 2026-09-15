@@ -62,6 +62,13 @@ See `.env.example`. Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_
 
 Local: `cd digital-store && npm install && npm run dev`.
 
+## Free vs paid products
+
+- `price = 0` means **free** (no migration; `CHECK (price >= 0)` already allows it). Set it in `/admin/products/new` or the edit page.
+- Free carts skip Stripe entirely (it rejects $0 line items): `POST /api/checkout` resolves the total server-side; if 0 it requires login, creates a `paid` Rp0 order + snapshots + a `provider='free'` payment row, and returns `{free:true, orderId}`. Download tokens work identically afterwards.
+- Mixed carts (free + paid): only priced items go to Stripe; free items ride in metadata and are added to the paid order by the webhook.
+- UI: cards/cart/detail show green **Free** + FREE badge; buttons turn green (`⬇ Get Free` / `⬇ Get for Free`); guests are sent to `/login`.
+
 ### 7.2 Staging verification (do this before calling it production-ready)
 
 Supabase staging project:
