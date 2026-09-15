@@ -61,8 +61,8 @@ export function DownloadButtons({ orderId }: { orderId: string }) {
       {rows.map((r) => (
         <div key={r.product_file_id} className="card flex items-center justify-between">
           <div><p className="font-medium">{r.name}</p><p className="text-xs text-zinc-500">{r.mime ?? 'file'} · {formatBytes(r.size)} · {r.download_count ?? 0}/{r.max_downloads ?? 5} downloads</p></div>
-          <button className="btn-primary !px-3 !py-1.5 text-xs" disabled={busy === r.product_file_id} onClick={() => getLink(r.product_file_id)}>
-            {busy === r.product_file_id ? 'Preparing…' : 'Download'}
+          <button className="btn-download !px-3 !py-1.5 text-xs" disabled={busy === r.product_file_id} onClick={() => getLink(r.product_file_id)}>
+            {busy === r.product_file_id ? 'Preparing…' : '⬇ Download'}
           </button>
         </div>
       ))}

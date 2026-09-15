@@ -24,7 +24,7 @@ export default async function Home() {
   return (
     <div>
       {/* Hero with search */}
-      <section className="border-b bg-gradient-to-b from-indigo-50 to-white">
+      <section className="border-b bg-gradient-to-b from-brand-50 to-white">
         <div className="container-x py-12 text-center sm:py-16">
           <p className="text-xs font-bold uppercase tracking-widest text-brand-600">Digital download store</p>
           <h1 className="mx-auto mt-2 max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl">Digital products, instant secure download</h1>
@@ -109,8 +109,8 @@ export default async function Home() {
             </ul>
           </div>
 
-          <div className="rounded-2xl bg-zinc-950 p-5 text-sm text-zinc-300">
-            <p className="font-bold text-white">Private delivery</p>
+          <div className="rounded-2xl bg-gradient-to-br from-green-700 to-green-600 p-5 text-sm text-green-50">
+            <p className="font-bold text-white">⬇ Private delivery</p>
             <p className="mt-1">Stripe-verified payments. Hashed, expiring download tokens. Never public Drive links.</p>
           </div>
         </aside>
@@ -120,7 +120,7 @@ export default async function Home() {
       <section className="container-x mt-12">
         <div className="card flex flex-col items-center gap-3 bg-zinc-950 text-white sm:flex-row sm:justify-between">
           <div><p className="text-lg font-bold">Need a file fast?</p><p className="text-sm text-zinc-300">Search the catalog and check out in a minute.</p></div>
-          <Link href="/products" className="btn-primary">Start shopping</Link>
+          <Link href="/products" className="btn-download">Start shopping</Link>
         </div>
       </section>
     </div>
