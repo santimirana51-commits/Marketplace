@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useCart } from '@/components/CartProvider';
 import { CheckoutButton } from '@/components/CheckoutButton';
-import { formatPrice } from '@/lib/format';
+import { formatPriceFree } from '@/lib/format';
 
 export default function CartPage() {
   const { items, remove, subtotal } = useCart();
@@ -15,11 +15,11 @@ export default function CartPage() {
         <div className="mt-6 space-y-3">
           {items.map((i) => (
             <div key={i.slug} className="card flex items-center justify-between">
-              <div><p className="font-semibold">{i.title}</p><p className="text-sm text-zinc-500">Qty {i.qty} · {formatPrice(i.price)}</p></div>
+              <div><p className="font-semibold">{i.title}</p><p className="text-sm text-zinc-500">Qty {i.qty} · {formatPriceFree(i.price)}</p></div>
               <button className="text-sm text-red-600 underline" onClick={() => remove(i.slug)}>Remove</button>
             </div>
           ))}
-          <div className="card flex items-center justify-between font-bold"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
+          <div className="card flex items-center justify-between font-bold"><span>Subtotal</span><span>{formatPriceFree(subtotal)}</span></div>
           <CheckoutButton />
         </div>
       )}

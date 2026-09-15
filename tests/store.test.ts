@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { generateRawToken, hashToken, tokenExpiry, maxDownloads } from '../lib/tokens';
 import { checkoutSchema, adminProductSchema, adminFileSchema } from '../lib/validation';
-import { formatPrice, formatBytes } from '../lib/format';
+import { formatPrice, formatBytes, isFreePrice, formatPriceFree } from '../lib/format';
 import { rateLimit } from '../lib/rate-limit';
 import { isAdminEmail } from '../lib/auth';
 
@@ -187,6 +187,48 @@ describe('validation: slugs + drive ids', () => {
   it('requires Drive file id for attachments', () => {
     expect(adminFileSchema.safeParse({ name: 'f', google_drive_file_id: 'x' }).success).toBe(false);
     expect(adminFileSchema.safeParse({ name: 'f', google_drive_file_id: '1AbCdefGh' }).success).toBe(true);
+  });
+});
+
+describe('16. free vs paid products', () => {
+  it('price 0 passes product validation (free needs no migration)', () => {
+    expect(adminProductSchema.safeParse({ title: 'Freebie', slug: 'freebie', price: 0 }).success).toBe(true);
+  });
+  it('detects free prices incl. string "0"', () => {
+    expect(isFreePrice(0)).toBe(true);
+    expect(isFreePrice('0')).toBe(true);
+    expect(isFreePrice('0.00')).toBe(true);
+    expect(isFreePrice(29)).toBe(false);
+    expect(isFreePrice('29.99')).toBe(false);
+  });
+  it('displays Free instead of $0.00', () => {
+    expect(formatPriceFree(0)).toBe('Free');
+    expect(formatPriceFree('0', 'USD')).toBe('Free');
+    expect(formatPriceFree(29, 'USD')).toBe('$29.00');
+  });
+  it('free checkout path requires login + never touches Stripe', async () => {
+    const fs = await import('node:fs/promises');
+    const src = await fs.readFile('app/api/checkout/route.ts', 'utf8');
+    expect(src).toMatch(/total <= 0/);
+    expect(src).toMatch(/requireUser/);
+    expect(src).toMatch(/Sign in to download free products/);
+    expect(src).toMatch(/provider: 'free'/);
+    // free fulfillment inserts its own order — Stripe session never created on that path
+    const freeBlock = src.slice(src.indexOf('FREE PATH'), src.indexOf('Stripe rejects'));
+    expect(freeBlock).not.toMatch(/stripe\(\)/);
+  });
+  it('mixed carts charge only priced items, free items ride in metadata', async () => {
+    const fs = await import('node:fs/promises');
+    const src = await fs.readFile('app/api/checkout/route.ts', 'utf8');
+    expect(src).toMatch(/filter\(\(i\) => Number\(.*\.price\) > 0\)/);
+  });
+  it('free clients redirect to login/order instead of Stripe URL', async () => {
+    const fs = await import('node:fs/promises');
+    const a = await fs.readFile('components/CheckoutButton.tsx', 'utf8');
+    const b = await fs.readFile('components/CartQuickBuy.tsx', 'utf8');
+    expect(a).toMatch(/data\.free/);
+    expect(a).toMatch(/\/login/);
+    expect(b).toMatch(/Get Free/);
   });
 });
 

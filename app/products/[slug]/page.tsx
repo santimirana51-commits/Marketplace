@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { getPublishedProduct } from '@/lib/products';
-import { formatBytes, formatPrice } from '@/lib/format';
+import { formatBytes, formatPriceFree, isFreePrice } from '@/lib/format';
 import { AddToCartButton } from '@/components/AddToCartButton';
 
 const BuyNow = dynamic(() => import('@/components/CartQuickBuy').then((m) => m.BuyNow), { ssr: false });
@@ -40,7 +40,10 @@ export default async function ProductDetail({ params }: { params: { slug: string
       </div>
       <div>
         <h1 className="text-3xl font-bold">{p.title}</h1>
-        <p className="mt-2 text-2xl font-extrabold">{formatPrice(Number(p.price), p.currency)}</p>
+        <div className="mt-2 flex items-center gap-2">
+          <p className="text-2xl font-extrabold">{formatPriceFree(Number(p.price), p.currency)}</p>
+          {isFreePrice(Number(p.price)) ? <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700">FREE</span> : null}
+        </div>
         <p className="mt-4 whitespace-pre-line text-zinc-700">{p.description}</p>
         <div className="card mt-6">
           <p className="font-semibold">Included files ({files.length})</p>
@@ -59,7 +62,7 @@ export default async function ProductDetail({ params }: { params: { slug: string
           <AddToCartButton slug={p.slug} title={p.title} price={Number(p.price)} thumbnail={p.thumbnail_url ?? undefined} />
           <BuyNow slug={p.slug} title={p.title} price={Number(p.price)} />
         </div>
-        <p className="mt-3 max-w-sm text-xs text-zinc-500">Secure Stripe Checkout. Payment is confirmed by webhook — never by the browser.</p>
+        <p className="mt-3 max-w-sm text-xs text-zinc-500">{isFreePrice(Number(p.price)) ? 'Free download — sign in, no payment needed. Same secure expiring tokens.' : 'Secure Stripe Checkout. Payment is confirmed by webhook — never by the browser.'}</p>
       </div>
     </div>
   );
