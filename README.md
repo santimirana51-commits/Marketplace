@@ -26,9 +26,17 @@ Apply in Supabase SQL editor (order matters):
 
 ## 3. Environment variables
 
-See `.env.example`. Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server only), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `GOOGLE_DRIVE_CLIENT_ID/SECRET/REFRESH_TOKEN/FOLDER_ID` (server only), `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAILS`, `DOWNLOAD_TOKEN_TTL_HOURS` (72), `DOWNLOAD_MAX_DOWNLOADS` (5).
+See `.env.example`. Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server only), `MIDTRANS_SERVER_KEY` (server only, sandbox `SB-Mid-server-…`), `GOOGLE_DRIVE_CLIENT_ID/SECRET/REFRESH_TOKEN/FOLDER_ID` (server only), `NEXT_PUBLIC_SITE_URL`, `ADMIN_EMAILS`, `DOWNLOAD_TOKEN_TTL_HOURS` (72), `DOWNLOAD_MAX_DOWNLOADS` (5). Stripe keys optional fallback.
 
-## 4. Stripe configuration
+## 4. Midtrans configuration (Indonesia: QRIS/VA/e-wallet/cards, IDR only)
+
+1. **dashboard.midtrans.com** → register → **Sandbox** → Settings → Access Keys → copy **Server Key** (`SB-Mid-server-…`) → `MIDTRANS_SERVER_KEY`. Keep `MIDTRANS_IS_PRODUCTION=false` until go-live.
+2. Prices for paid products must be in **IDR integers** (Midtrans rejects other currencies; checkout returns 400 otherwise).
+3. Sandbox → Settings → Configuration → **Payment Notification URL**: `https://<site>/api/midtrans/webhook` (verified via SHA512 signature, no extra secret). Enable needed payment types.
+4. Test: Snap redirect → pay via test QRIS/VA → notification flips pending order to `paid`; re-send notification from dashboard → `{duplicate:true}`.
+5. Go-live: production Server Key + `MIDTRANS_IS_PRODUCTION=true` + production notification URL.
+
+## 4b. Stripe configuration (optional fallback, international cards)
 
 1. Dashboard → Developers → API keys → copy secret + publishable key.
 2. Create Checkout is API-driven (`POST /api/checkout`); prices are reloaded from DB — client prices ignored.
@@ -45,7 +53,7 @@ See `.env.example`. Required: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_
 
 ## 6. Supabase configuration
 
-1. New project → SQL editor → run migrations 0001, 0002, 0003 (order matters; 0003 revokes public reads on `product_files`).
+1. New project → SQL editor → run migrations 0001, 0002, 0003, 0004 (order matters; 0003 revokes public reads on `product_files`; 0004 adds `orders.provider` + `provider_order_id` for multi-gateway).
 2. Auth → enable **Email (magic link)** → add `http://localhost:3000/auth/callback` and `https://<site>/auth/callback` to redirect URLs.
 3. Storage is **not** used for digital files (Drive only). Thumbnails may be any public HTTPS URL.
 4. Create first admin: sign in once, then set `ADMIN_EMAILS` to include that email.

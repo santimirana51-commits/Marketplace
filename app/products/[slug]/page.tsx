@@ -62,7 +62,7 @@ export default async function ProductDetail({ params }: { params: { slug: string
           <AddToCartButton slug={p.slug} title={p.title} price={Number(p.price)} thumbnail={p.thumbnail_url ?? undefined} />
           <BuyNow slug={p.slug} title={p.title} price={Number(p.price)} />
         </div>
-        <p className="mt-3 max-w-sm text-xs text-zinc-500">{isFreePrice(Number(p.price)) ? 'Free download — sign in, no payment needed. Same secure expiring tokens.' : 'Secure Stripe Checkout. Payment is confirmed by webhook — never by the browser.'}</p>
+        <p className="mt-3 max-w-sm text-xs text-zinc-500">{isFreePrice(Number(p.price)) ? 'Free download — sign in, no payment needed. Same secure expiring tokens.' : 'Secure checkout (QRIS, bank transfer, e-wallet, cards). Payment is confirmed by webhook — never by the browser.'}</p>
       </div>
     </div>
   );

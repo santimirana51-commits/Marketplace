@@ -36,7 +36,7 @@ export function CheckoutButton() {
   return (
     <div>
       <button className={allFree ? 'btn-download w-full' : 'btn-primary w-full'} disabled={!items.length || loading} onClick={go}>
-        {loading ? (allFree ? 'Preparing…' : 'Redirecting…') : allFree ? '⬇ Get for Free' : 'Buy Now — Stripe Checkout'}
+        {loading ? (allFree ? 'Preparing…' : 'Redirecting…') : allFree ? '⬇ Get for Free' : 'Pay Now — Secure Checkout'}
       </button>
       {allFree ? <p className="mt-2 text-xs text-zinc-500">Free order — sign-in required, no payment.</p> : null}
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}

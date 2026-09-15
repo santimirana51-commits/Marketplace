@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { stripe, siteUrl } from '@/lib/stripe';
 import { adminClient } from '@/lib/supabase/admin';
-import { requireUser, ensureCustomer } from '@/lib/auth';
+import { requireUser, ensureCustomer, getSessionUser } from '@/lib/auth';
+import { newMidtransOrderId, createSnapTransaction } from '@/lib/midtrans';
 import { checkoutSchema, errResponse } from '@/lib/validation';
 import { log } from '@/lib/logger';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
@@ -100,6 +101,77 @@ export async function POST(req: Request) {
       };
     });
 
+  // PAID PATH: Midtrans first (Indonesia: QRIS/VA/e-wallet/cards),
+  // Stripe fallback (international cards). Server picks by configured keys.
+  if (process.env.MIDTRANS_SERVER_KEY) {
+    if (currency.toUpperCase() !== 'IDR') {
+      return errResponse('Midtrans only processes IDR — set product prices in IDR', 400);
+    }
+    const pricedTotal = parsed.data.items.reduce((sum, i) => {
+      const p = bySlug.get(i.slug) as { price: number | string } | undefined;
+      const unit = p ? Number(p.price) : 0;
+      return sum + (unit > 0 ? unit * i.quantity : 0);
+    }, 0);
+    try {
+      const admin3 = adminClient();
+      // Guest checkout supported: owner = session user, else email row.
+      const sessionUser = await getSessionUser().catch(() => null);
+      let customerId: string | null = null;
+      const email = sessionUser?.email ?? parsed.data.customerEmail ?? null;
+      if (sessionUser?.email) {
+        customerId = (await ensureCustomer(sessionUser.id, sessionUser.email)).id;
+      } else if (email) {
+        const { data: c } = await admin3.from('customers').select('id').eq('email', email).maybeSingle();
+        if (c) customerId = (c as { id: string }).id;
+        else {
+          const { data: created } = await admin3.from('customers').insert({ email }).select('id').single();
+          customerId = (created as { id: string } | null)?.id ?? null;
+        }
+      }
+      // Pending order first: maps Midtrans order_id back without trusting client.
+      const providerOrderId = newMidtransOrderId();
+      const { data: order, error: orderErr } = await admin3.from('orders').insert({
+        customer_id: customerId, customer_email: email,
+        provider: 'midtrans', provider_order_id: providerOrderId,
+        stripe_session_id: null, stripe_payment_intent_id: null,
+        status: 'pending', subtotal: total, total, currency: currency.toUpperCase(),
+      }).select('id').single();
+      if (orderErr || !order) {
+        log('checkout.midtrans.order_failed', {});
+        return errResponse('Could not create order', 500);
+      }
+      const orderId = (order as { id: string }).id;
+      for (const i of parsed.data.items) {
+        const p = bySlug.get(i.slug) as { id: string; title: string; price: number | string } | undefined;
+        if (!p) continue;
+        await admin3.from('order_items').insert({
+          order_id: orderId, product_id: p.id, product_title: p.title, price: p.price, quantity: i.quantity,
+        });
+      }
+      const snapItems = parsed.data.items
+        .filter((i) => Number((bySlug.get(i.slug) as { price: number | string }).price) > 0)
+        .map((i) => {
+          const p = bySlug.get(i.slug) as { id: string; title: string; price: number | string };
+          return { id: p.id, name: p.title, price: Number(p.price), quantity: i.quantity };
+        });
+      const snap = await createSnapTransaction({
+        orderId: providerOrderId,
+        grossAmount: pricedTotal,
+        items: snapItems,
+        customerEmail: email,
+        customItems: parsed.data.items.map((i) => ({ slug: i.slug, qty: i.quantity })),
+      });
+      log('checkout.midtrans.created', {});
+      return Response.json({ url: snap.redirectUrl, provider: 'midtrans', orderId });
+    } catch (e) {
+      log('checkout.midtrans.error', {});
+      return errResponse('Could not start checkout', 502);
+    }
+  }
+
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return errResponse('Payments not configured', 502);
+  }
   const metadata: Record<string, string> = {
     items: JSON.stringify(parsed.data.items.map((i) => ({ slug: i.slug, qty: i.quantity }))),
   };
@@ -115,7 +187,7 @@ export async function POST(req: Request) {
       customer_email: parsed.data.customerEmail,
     });
     log('checkout.session.created', {});
-    return Response.json({ url: session.url });
+    return Response.json({ url: session.url, provider: 'stripe' });
   } catch (e) {
     log('checkout.session.error', {});
     return errResponse('Could not start checkout', 502);

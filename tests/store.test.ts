@@ -232,6 +232,53 @@ describe('16. free vs paid products', () => {
   });
 });
 
+describe('17. midtrans provider', () => {
+  it('verifies notification signature against a known vector', async () => {
+    const { verifyMidtransSignature } = await import('../lib/midtrans');
+    const good = {
+      order_id: 'pb-abc123', status_code: '200', gross_amount: '29000',
+      signature_key: 'ba5c57e8665590fd91a0c91ee53545cfe4476f1ca0f561edb40574e5639cbef278eea161d79de40d760339c6d6ac03bfe842e7498350449383e82666ed1dcb61',
+      transaction_status: 'settlement',
+    };
+    expect(verifyMidtransSignature(good, 'test-server-key')).toBe(true);
+    expect(verifyMidtransSignature({ ...good, gross_amount: '29001' }, 'test-server-key')).toBe(false);
+    expect(verifyMidtransSignature({ ...good, signature_key: 'zz' }, 'test-server-key')).toBe(false);
+    expect(verifyMidtransSignature(good, 'wrong-key')).toBe(false);
+  });
+  it('maps transaction statuses (cards need fraud accept)', async () => {
+    const { midtransOrderStatus } = await import('../lib/midtrans');
+    expect(midtransOrderStatus({ transaction_status: 'settlement' })).toBe('paid');
+    expect(midtransOrderStatus({ transaction_status: 'capture', fraud_status: 'accept' })).toBe('paid');
+    expect(midtransOrderStatus({ transaction_status: 'capture', fraud_status: 'challenge' })).toBe('pending');
+    expect(midtransOrderStatus({ transaction_status: 'pending' })).toBe('pending');
+    expect(midtransOrderStatus({ transaction_status: 'expire' })).toBe('cancelled');
+    expect(midtransOrderStatus({ transaction_status: 'deny' })).toBe('failed');
+  });
+  it('mints unique pb- order ids', async () => {
+    const { newMidtransOrderId } = await import('../lib/midtrans');
+    const a = newMidtransOrderId();
+    expect(a).toMatch(/^pb-[0-9a-f]+$/);
+    expect(newMidtransOrderId()).not.toBe(a);
+  });
+  it('checkout picks midtrans for IDR, rejects non-IDR, keeps stripe fallback', async () => {
+    const fs = await import('node:fs/promises');
+    const src = await fs.readFile('app/api/checkout/route.ts', 'utf8');
+    expect(src).toMatch(/MIDTRANS_SERVER_KEY/);
+    expect(src).toMatch(/Midtrans only processes IDR/);
+    expect(src).toMatch(/provider_order_id/);
+    expect(src).toMatch(/createSnapTransaction/);
+    expect(src).toMatch(/Payments not configured/);
+  });
+  it('midtrans webhook verifies signature + amount + idempotency gates', async () => {
+    const fs = await import('node:fs/promises');
+    const src = await fs.readFile('app/api/midtrans/webhook/route.ts', 'utf8');
+    expect(src).toMatch(/verifyMidtransSignature/);
+    expect(src).toMatch(/Amount mismatch/);
+    expect(src).toMatch(/duplicate/);
+    expect(src).toMatch(/provider_payment_id/);
+  });
+});
+
 describe('formatting', () => {
   it('formats USD', () => expect(formatPrice(29.99, 'USD')).toBe('$29.99'));
   it('formats bytes', () => {
