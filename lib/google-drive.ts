@@ -8,6 +8,20 @@ export type DriveMeta = {
   size?: number;
 };
 
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
+
+/**
+ * Preferred: service account (server-to-server, no browser dance, no
+ * 7-day test-mode expiry). The product folder must be SHARED with the
+ * service account email (Viewer is enough).
+ */
+function serviceAuth() {
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  if (!email || !key) return null;
+  return new google.auth.JWT({ email, key, scopes: [DRIVE_SCOPE] });
+}
+
 function oauthClient() {
   const id = process.env.GOOGLE_DRIVE_CLIENT_ID;
   const secret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
@@ -21,7 +35,15 @@ function oauthClient() {
 }
 
 function drive() {
-  return google.drive({ version: 'v3', auth: oauthClient() });
+  return google.drive({ version: 'v3', auth: serviceAuth() ?? oauthClient() });
+}
+
+/** True when any server-side Drive credential pair is present. */
+export function isDriveConfigured(): boolean {
+  return Boolean(
+    (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY) ||
+    (process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET && process.env.GOOGLE_DRIVE_REFRESH_TOKEN),
+  );
 }
 
 /** Fetch metadata; throws DriveNotFound on 404. Never logs secrets. */
