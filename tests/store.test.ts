@@ -279,6 +279,16 @@ describe('17. midtrans provider', () => {
   });
 });
 
+describe('18. drive file id extraction', () => {
+  it('accepts bare ids and full share links', async () => {
+    const { extractDriveFileId } = await import('../lib/google-drive');
+    expect(extractDriveFileId('1g3OgK_QQUGQlrlodieSxyz')).toBe('1g3OgK_QQUGQlrlodieSxyz');
+    expect(extractDriveFileId('https://drive.google.com/file/d/1g3OgK_QQUGQlrlodieSxyz/view?usp=sharing')).toBe('1g3OgK_QQUGQlrlodieSxyz');
+    expect(extractDriveFileId('https://drive.google.com/open?id=1g3OgK_QQUGQlrlodieSxyz')).toBe('1g3OgK_QQUGQlrlodieSxyz');
+    expect(extractDriveFileId('  1g3OgK_QQUGQlrlodieSxyz  ')).toBe('1g3OgK_QQUGQlrlodieSxyz');
+  });
+});
+
 describe('formatting', () => {
   it('formats USD', () => expect(formatPrice(29.99, 'USD')).toBe('$29.99'));
   it('formats bytes', () => {

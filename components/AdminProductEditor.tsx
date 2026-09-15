@@ -75,7 +75,7 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
 
       <div className="card">
         <p className="font-semibold">Google Drive files ({files.length})</p>
-        <p className="text-xs text-zinc-500">Paste a Drive file ID — the server validates existence before saving. Credentials never leave the server.</p>
+        <p className="text-xs text-zinc-500">Paste a Drive share link or file ID — the server extracts the ID and validates existence before saving. Credentials never leave the server.</p>
         <ul className="mt-3 space-y-2 text-sm">
           {files.map((f) => (
             <li key={f.id} className="flex items-center justify-between gap-3">

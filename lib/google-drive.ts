@@ -102,9 +102,21 @@ export async function downloadDriveFileStream(fileId: string): Promise<{
   }
 }
 
+/**
+ * Accept a bare Drive file id OR a full share URL
+ * (…/file/d/ID/…, …?id=ID, …/open?id=ID) and return the bare id.
+ * Admins always paste links — never reject them, just normalize.
+ */
+export function extractDriveFileId(input: string): string {
+  const s = (input ?? '').trim();
+  const m = s.match(/\/file\/d\/([A-Za-z0-9_-]+)/) ?? s.match(/[?&]id=([A-Za-z0-9_-]+)/);
+  if (m) return m[1];
+  return s;
+}
+
 /** Admin helper: validate that a Drive file id exists before saving. */
 export async function validateDriveFile(fileId: string) {
-  return getDriveFileMetadata(fileId);
+  return getDriveFileMetadata(extractDriveFileId(fileId));
 }
 
 /** Spec-named aliases (original implementation, same secure behavior). */
