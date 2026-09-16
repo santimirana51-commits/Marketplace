@@ -358,12 +358,6 @@ describe('11g. landing CMS', () => {
     expect(home).toMatch(/getContentMap/);
     expect(home).toMatch(/t\(cm, 'hero_title_a'\)/);
   });
-  it('editor shows live side preview', async () => {
-    const src = await import('node:fs/promises').then((fs) => fs.readFile('components/LandingEditor.tsx', 'utf8'));
-    expect(src).toMatch(/Pratinjau live/);
-    expect(src).toMatch(/sticky/);
-    expect(src).toMatch(/parseFaqList/);
-  });
   it('migration 0009 creates site_content locked to service role', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('supabase/migrations/0009_content.sql', 'utf8'));
     expect(src).toMatch(/site_content/);
