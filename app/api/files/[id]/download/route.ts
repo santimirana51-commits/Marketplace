@@ -20,11 +20,17 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 
   const admin = adminClient();
-  const { data: file } = await admin
+  const first = await admin
     .from('product_files')
     .select('id,name,google_drive_file_id,google_drive_mime_type,downloads,products!inner(status)')
     .eq('id', id)
     .maybeSingle();
+  // Pre-0005 databases lack the downloads column — retry without it.
+  const file = first.data ?? (await admin
+    .from('product_files')
+    .select('id,name,google_drive_file_id,google_drive_mime_type,products!inner(status)')
+    .eq('id', id)
+    .maybeSingle()).data;
   if (!file) return Response.json({ error: 'File tidak ditemukan' }, { status: 404 });
   const f = file as {
     id: string; name: string; google_drive_file_id: string;
