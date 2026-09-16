@@ -57,6 +57,26 @@ export function isSafeExternalUrl(input: string): boolean {
   return true;
 }
 
+/**
+ * Route pasted input to Drive-id vs external-URL mode. Admins paste
+ * anything into one box: Drive links/ids stay Drive, safe http(s) links
+ * become external sources, garbage stays invalid with a clear message.
+ */
+export function classifyAttachmentInput(rawDrive: string, rawUrl: string): { driveId: string; url: string } {
+  let driveId = rawDrive.trim();
+  let url = rawUrl.trim();
+  try {
+    // Reuse the Drive extractor without importing googleapis (validation stays light).
+    const m = driveId.match(/\/file\/d\/([A-Za-z0-9_-]+)/) ?? driveId.match(/[?&]id=([A-Za-z0-9_-]+)/);
+    if (m) driveId = m[1];
+  } catch { /* keep raw */ }
+  if (driveId && !/^[A-Za-z0-9_-]{5,300}$/.test(driveId)) {
+    if (!url && isSafeExternalUrl(driveId)) url = driveId;
+    driveId = /^[A-Za-z0-9_-]{5,300}$/.test(driveId) ? driveId : '';
+  }
+  return { driveId, url };
+}
+
 export const adminFileSchema = z.object({
   // Optional: empty falls back to the Drive file name server-side.
   name: z.string().max(300).default(''),

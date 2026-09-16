@@ -1,7 +1,7 @@
 import { requireAdmin } from '@/lib/auth';
 import { adminClient } from '@/lib/supabase/admin';
-import { adminFileSchema, adminProductSchema, errResponse, isSafeExternalUrl } from '@/lib/validation';
-import { validateDriveFile, extractDriveFileId, isDriveConfigured } from '@/lib/google-drive';
+import { adminFileSchema, adminProductSchema, errResponse, isSafeExternalUrl, classifyAttachmentInput } from '@/lib/validation';
+import { validateDriveFile, isDriveConfigured } from '@/lib/google-drive';
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -15,8 +15,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const admin = adminClient();
     const b = body as { action: string; fileId?: string; name?: string; google_drive_file_id?: string; external_url?: string };
     if (b.action === 'addFile') {
-      const driveId = extractDriveFileId(String(b.google_drive_file_id ?? ''));
-      const url = String(b.external_url ?? '').trim();
+      const { driveId, url } = classifyAttachmentInput(
+        String(b.google_drive_file_id ?? ''), String(b.external_url ?? ''),
+      );
       const parsed = adminFileSchema.safeParse({ name: b.name, google_drive_file_id: driveId, external_url: url });
       if (!parsed.success) return errResponse(parsed.error.errors[0]?.message ?? 'Invalid file input');
       // External source: no Drive involved at all.

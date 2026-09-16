@@ -220,6 +220,18 @@ describe('11b. external source links', () => {
   });
 });
 
+describe('11b2. forgiving attach input routing', () => {
+  it('routes drive links/ids vs external URLs vs garbage', async () => {
+    const { classifyAttachmentInput } = await import('../lib/validation');
+    expect(classifyAttachmentInput('1AbCdefGhIjK', '')).toEqual({ driveId: '1AbCdefGhIjK', url: '' });
+    expect(classifyAttachmentInput('https://drive.google.com/file/d/1AbCdefGhIjK/view', '')).toEqual({ driveId: '1AbCdefGhIjK', url: '' });
+    expect(classifyAttachmentInput('https://www.mediafire.com/file/abc/file', '')).toEqual({ driveId: '', url: 'https://www.mediafire.com/file/abc/file' });
+    expect(classifyAttachmentInput('https://www.mediafire.com/file/abc/file', 'https://example.com/x.zip')).toEqual({ driveId: '', url: 'https://example.com/x.zip' });
+    expect(classifyAttachmentInput('!!!', '')).toEqual({ driveId: '', url: '' });
+    expect(classifyAttachmentInput('', '')).toEqual({ driveId: '', url: '' });
+  });
+});
+
 describe('11. portal admin surface', () => {
   it('nav has Dashboard + Products only (no orders/customers)', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('components/AdminShell.tsx', 'utf8'));

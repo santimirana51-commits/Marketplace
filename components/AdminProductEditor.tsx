@@ -11,7 +11,6 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
   const [msg, setMsg] = useState<string | null>(null);
   const [driveName, setDriveName] = useState('');
   const [driveId, setDriveId] = useState('');
-  const [extUrl, setExtUrl] = useState('');
 
   async function patch(payload: object) {
     const res = await fetch(`/api/admin/products/${product.id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
@@ -38,10 +37,11 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
   async function addFile() {
     setMsg(null);
     try {
-      const data = await patch({ action: 'addFile', name: driveName, google_drive_file_id: driveId, external_url: extUrl });
+      const data = await patch({ action: 'addFile', name: driveName, google_drive_file_id: driveId });
       setFiles((f) => [...f, data.file]);
-      setDriveName(''); setDriveId(''); setExtUrl('');
-      setMsg(driveId ? 'File validated against Drive and attached.' : 'External link attached.');
+      const wasUrl = !driveId.match(/^[A-Za-z0-9_-]{5,300}$/) && driveId.includes('http');
+      setDriveName(''); setDriveId('');
+      setMsg(wasUrl ? 'External link attached.' : 'File validated against Drive and attached.');
     } catch (e) { setMsg(e instanceof Error ? e.message : 'Failed'); }
   }
 
@@ -72,7 +72,7 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
 
       <div className="card">
         <p className="font-semibold">Google Drive files ({files.length})</p>
-        <p className="text-xs text-zinc-500">Paste a Drive share link or file ID — the server extracts the ID and validates existence before saving. Credentials never leave the server.</p>
+        <p className="text-xs text-zinc-500">Tempel link/ID Drive atau URL luar — server memilah otomatis dan memvalidasi sebelum menyimpan.</p>
         <ul className="mt-3 space-y-2 text-sm">
           {files.map((f) => (
             <li key={f.id} className="flex items-center justify-between gap-3">
@@ -81,13 +81,11 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
             </li>
           ))}
         </ul>
-        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-          <input className="input" placeholder="Display name" value={driveName} onChange={(e) => setDriveName(e.target.value)} />
-          <input className="input" placeholder="Drive file ID / link" value={driveId} onChange={(e) => setDriveId(e.target.value)} />
+        <p className="mt-3 text-xs text-zinc-500">Satu kolom untuk semua: link/ID Drive atau URL luar (https://…).</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+          <input className="input" placeholder="Display name (opsional)" value={driveName} onChange={(e) => setDriveName(e.target.value)} />
+          <input className="input" placeholder="Link Drive / ID / URL luar" value={driveId} onChange={(e) => setDriveId(e.target.value)} />
           <button type="button" className="btn-secondary" onClick={addFile}>Attach</button>
-        </div>
-        <div className="mt-2 flex gap-2">
-          <input className="input" placeholder="…atau URL luar (https://…)" value={extUrl} onChange={(e) => setExtUrl(e.target.value)} />
         </div>
       </div>
 
