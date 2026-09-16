@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { listPublishedProducts } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
-import { NAV_CATS } from '@/components/SiteHeader';
+import { NAV_CATS } from '@/lib/nav';
 import { formatPrice } from '@/lib/format';
 
 type P = {

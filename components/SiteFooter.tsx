@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { NAV_CATS } from '@/components/SiteHeader';
+import { NAV_CATS } from '@/lib/nav';
 
 export function SiteFooter() {
   const pathname = usePathname();

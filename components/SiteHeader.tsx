@@ -2,21 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CartBadge } from '@/components/CartBadge';
-
-export const NAV_CATS = [
-  { label: 'All', href: '/products' },
-  { label: 'Templates', href: '/products?q=template' },
-  { label: 'Design', href: '/products?q=design' },
-  { label: 'PDF & Docs', href: '/products?q=pdf' },
-  { label: 'Scripts & Code', href: '/products?q=script' },
-];
-
-const ADMIN_NAV = [
-  { label: 'Dashboard', href: '/admin' },
-  { label: 'Products', href: '/admin/products' },
-  { label: 'Orders', href: '/admin/orders' },
-  { label: 'Customers', href: '/admin/customers' },
-];
+import { NAV_CATS, ADMIN_NAV } from '@/lib/nav';
 
 export function SiteHeader() {
   const pathname = usePathname();
