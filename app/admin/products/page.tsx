@@ -9,7 +9,7 @@ export default async function AdminProducts() {
   if (!user || !isAdminEmail(user.email)) redirect('/login');
   const { data: products } = await adminClient().from('products').select('*').order('created_at', { ascending: false }).limit(100);
   return (
-    <div className="container-x py-10">
+    <div className="mx-auto max-w-5xl">
       <div className="flex items-center justify-between"><h1 className="text-3xl font-bold">Products</h1><Link href="/admin/products/new" className="btn-primary">New product</Link></div>
       <table className="table mt-6"><thead><tr><th>Title</th><th>Slug</th><th>Status</th><th>Price</th><th></th></tr></thead>
         <tbody>

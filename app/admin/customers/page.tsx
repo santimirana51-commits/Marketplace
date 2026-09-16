@@ -7,7 +7,7 @@ export default async function AdminCustomers() {
   if (!user || !isAdminEmail(user.email)) redirect('/login');
   const { data: customers } = await adminClient().from('customers').select('*').order('created_at', { ascending: false }).limit(100);
   return (
-    <div className="container-x py-10">
+    <div className="mx-auto max-w-5xl">
       <h1 className="text-3xl font-bold">Customers</h1>
       <table className="table mt-6"><thead><tr><th>Email</th><th>Name</th><th>Joined</th></tr></thead>
         <tbody>

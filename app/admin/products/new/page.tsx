@@ -34,7 +34,7 @@ export default function NewProductPage() {
   }
 
   return (
-    <div className="container-x max-w-2xl py-10">
+    <div className="mx-auto max-w-2xl">
       <h1 className="text-3xl font-bold">New product</h1>
       <form onSubmit={submit} className="card mt-6 space-y-3">
         <div><label className="label">Title</label><input name="title" required className="input" /></div>

@@ -11,7 +11,7 @@ export default async function EditProduct({ params }: { params: { id: string } }
   if (!product) notFound();
   const { data: files } = await admin.from('product_files').select('*').eq('product_id', params.id);
   return (
-    <div className="container-x max-w-3xl py-10">
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-3xl font-bold">Edit product</h1>
       <AdminProductEditor product={product} files={files ?? []} />
     </div>

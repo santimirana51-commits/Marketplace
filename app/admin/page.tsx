@@ -39,7 +39,7 @@ export default async function AdminHome() {
   ).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   return (
-    <div className="container-x py-10">
+    <div className="mx-auto max-w-5xl">
       <h1 className="text-3xl font-bold">Admin</h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card"><p className="text-2xl font-extrabold">{revenue}</p><p className="text-sm text-zinc-600">Revenue (paid)</p></div>

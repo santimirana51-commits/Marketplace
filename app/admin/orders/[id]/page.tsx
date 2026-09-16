@@ -25,7 +25,7 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
   ]);
 
   return (
-    <div className="container-x py-10">
+    <div className="mx-auto max-w-5xl">
       <Link href="/admin/orders" className="text-sm text-brand-700 hover:underline">← Orders</Link>
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <h1 className="font-mono text-2xl font-bold">#{o.id.slice(0, 8)}</h1>

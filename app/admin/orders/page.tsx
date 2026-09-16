@@ -10,7 +10,7 @@ export default async function AdminOrders() {
   if (!user || !isAdminEmail(user.email)) redirect('/login');
   const { data: orders } = await adminClient().from('orders').select('*').order('created_at', { ascending: false }).limit(100);
   return (
-    <div className="container-x py-10">
+    <div className="mx-auto max-w-5xl">
       <h1 className="text-3xl font-bold">Orders</h1>
       <table className="table mt-6"><thead><tr><th>ID</th><th>Email</th><th>Status</th><th>Total</th><th>Date</th></tr></thead>
         <tbody>
