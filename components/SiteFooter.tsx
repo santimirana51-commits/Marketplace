@@ -1,7 +1,13 @@
+'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { NAV_CATS } from '@/components/SiteHeader';
 
 export function SiteFooter() {
+  const pathname = usePathname();
+  // No shop footer inside admin — keeps admin chrome focused.
+  if (pathname.startsWith('/admin')) return null;
+
   return (
     <footer className="mt-16 border-t bg-zinc-50">
       <div className="container-x grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">

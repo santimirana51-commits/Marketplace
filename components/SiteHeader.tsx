@@ -1,4 +1,6 @@
+'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { CartBadge } from '@/components/CartBadge';
 
 export const NAV_CATS = [
@@ -9,7 +11,51 @@ export const NAV_CATS = [
   { label: 'Scripts & Code', href: '/products?q=script' },
 ];
 
+const ADMIN_NAV = [
+  { label: 'Dashboard', href: '/admin' },
+  { label: 'Products', href: '/admin/products' },
+  { label: 'Orders', href: '/admin/orders' },
+  { label: 'Customers', href: '/admin/customers' },
+];
+
 export function SiteHeader() {
+  const pathname = usePathname();
+
+  // Admin chrome: no shop links at all, so category clicks can never
+  // throw the admin out to the storefront.
+  if (pathname.startsWith('/admin')) {
+    return (
+      <header>
+        <div className="bg-zinc-950 text-zinc-300">
+          <div className="container-x flex h-8 items-center justify-between text-xs">
+            <p className="font-bold text-white">Pixelbay Admin</p>
+            <nav className="flex items-center gap-4">
+              <Link href="/" className="hover:text-white">← View store</Link>
+              <Link href="/account" className="hover:text-white">My account</Link>
+            </nav>
+          </div>
+        </div>
+        <div className="border-b bg-white">
+          <nav className="container-x flex gap-1 overflow-x-auto py-1 text-sm font-medium" aria-label="Admin">
+            {ADMIN_NAV.map((c) => {
+              const active = pathname === c.href;
+              return (
+                <Link
+                  key={c.label}
+                  href={c.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`whitespace-nowrap rounded-lg px-3 py-2 hover:bg-zinc-100 hover:text-brand-700 ${active ? 'bg-zinc-100 text-brand-700' : 'text-zinc-700'}`}
+                >
+                  {c.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header>
       {/* Utility strip */}
