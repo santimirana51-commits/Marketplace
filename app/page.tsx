@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { listPublishedProducts } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
+import { ImageConverter } from '@/components/ImageConverter';
 import { NAV_CATS } from '@/lib/nav';
 import { toCategory } from '@/lib/categories';
 import { getContentMap, t, parsePipedList, parseFaqList, type Step, type Feature, type Faq } from '@/lib/content';
@@ -53,10 +54,9 @@ export default async function Home() {
           <p className="mx-auto mt-4 max-w-2xl text-base text-zinc-600 sm:text-lg">
             {t(cm, 'hero_sub')}
           </p>
-          <form action="/products" method="get" className="mx-auto mt-8 flex max-w-xl items-center gap-2 rounded-full border border-zinc-300 bg-white p-1.5 shadow-lg shadow-brand-600/5 focus-within:border-brand-500" role="search">
-            <input name="q" type="search" placeholder={t(cm, 'hero_placeholder')} className="w-full bg-transparent px-4 py-2 text-base outline-none placeholder:text-zinc-400" aria-label="Cari produk" />
-            <button type="submit" className="btn-primary shrink-0 !rounded-full">Cari</button>
-          </form>
+          <div className="mx-auto mt-8 max-w-3xl text-left">
+            <ImageConverter />
+          </div>
           <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
             {NAV_CATS.map((c) => (
               <Link key={c.label} href={c.href} className="rounded-full border border-zinc-300 bg-white px-3 py-1 font-medium text-zinc-700 hover:border-brand-500 hover:text-brand-700">
@@ -70,18 +70,6 @@ export default async function Home() {
             <span>⚡ Unduh detik itu juga</span>
             <span>🔒 Tanpa daftar</span>
           </div>
-        </div>
-      </section>
-
-      {/* Image tool */}
-      <section className="container-x mt-8">
-        <div className="flex flex-col gap-4 rounded-2xl border border-brand-200 bg-brand-50 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-brand-600">Tool gratis Pixelbay</p>
-            <h2 className="mt-1 text-xl font-extrabold text-brand-900">Ubah gambar menjadi SVG</h2>
-            <p className="mt-1 max-w-2xl text-sm text-zinc-600">Vectorize PNG, JPG, dan BMP dengan preview, pengaturan warna, simplify paths, serta batch processing langsung di browser.</p>
-          </div>
-          <Link href="/tools/image-converter" className="btn-primary shrink-0">Buka Image Converter</Link>
         </div>
       </section>
 
