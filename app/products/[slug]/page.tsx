@@ -114,25 +114,27 @@ export default async function ProductDetail({ params }: { params: { slug: string
 
       {/* Download box */}
       <div className="mt-8 overflow-hidden rounded-2xl border-2 border-green-600">
-        <p className="bg-green-600 px-5 py-3 text-lg font-extrabold text-white">⬇ Link download</p>
-        <ul className="divide-y">
-          {files.map((f, i) => {
-            const host = shortHost(f.external_url);
-            return (
-              <li key={f.id} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-green-50/50">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">#{i + 1} {f.name}</p>
-                  <p className="text-xs text-zinc-500">
-                    {f.file_size ? `${formatBytes(f.file_size)} · ` : ''}{host ? `via ${host}` : 'via Pixelbay'}
-                    {typeof f.downloads === 'number' ? ` · ⬇ ${f.downloads}×` : ''}
-                  </p>
-                </div>
-                <a href={`/api/files/${f.id}/download`} className="btn-download shrink-0">Unduh</a>
-              </li>
-            );
-          })}
-          {!files.length ? <li className="px-5 py-4 text-sm text-zinc-500">Belum ada file — kembali lagi nanti.</li> : null}
-        </ul>
+        <p className="bg-green-600 px-5 py-3 text-lg font-extrabold text-white">⬇ Link download ({files.length})</p>
+        {files.length <= 5 ? (
+          <ul className="divide-y">
+            {files.map((f, i) => <FileRow key={f.id} f={f} i={i} />)}
+          </ul>
+        ) : (
+          <>
+            <ul className="divide-y">
+              {files.slice(0, 5).map((f, i) => <FileRow key={f.id} f={f} i={i} />)}
+            </ul>
+            <details className="border-t bg-zinc-50">
+              <summary className="cursor-pointer px-5 py-2.5 text-sm font-bold text-brand-700 hover:bg-zinc-100">
+                Tampilkan semua {files.length} file ▾
+              </summary>
+              <ul className="divide-y border-t bg-white">
+                {files.slice(5).map((f, i) => <FileRow key={f.id} f={f} i={i + 5} />)}
+              </ul>
+            </details>
+          </>
+        )}
+        {!files.length ? <p className="px-5 py-4 text-sm text-zinc-500">Belum ada file — kembali lagi nanti.</p> : null}
       </div>
 
       {/* Important box */}
@@ -155,6 +157,22 @@ export default async function ProductDetail({ params }: { params: { slug: string
         </section>
       ) : null}
     </div>
+  );
+}
+
+function FileRow({ f, i }: { f: { id: string; name: string; google_drive_mime_type?: string | null; file_size?: number | null; downloads?: number | null; external_url?: string | null }; i: number }) {
+  const host = shortHost(f.external_url);
+  return (
+    <li className="flex items-center justify-between gap-3 px-4 py-2 hover:bg-green-50/50">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold">#{i + 1} {f.name}</p>
+        <p className="text-xs text-zinc-500">
+          {f.file_size ? `${formatBytes(f.file_size)} · ` : ''}{host ? `via ${host}` : 'via Pixelbay'}
+          {typeof f.downloads === 'number' ? ` · ⬇ ${f.downloads}×` : ''}
+        </p>
+      </div>
+      <a href={`/api/files/${f.id}/download`} className="btn-download shrink-0 !px-3 !py-1.5 !text-xs">Unduh</a>
+    </li>
   );
 }
 

@@ -296,6 +296,12 @@ describe('11. portal admin surface', () => {
     expect(src).toMatch(/\/api\/files\//);
     expect(src).not.toMatch(/AddToCart|BuyNow|formatPrice/);
   });
+  it('download box collapses long mirror lists', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('app/products/[slug]/page.tsx', 'utf8'));
+    expect(src).toMatch(/Tampilkan semua/);
+    expect(src).toMatch(/slice\(0, 5\)/);
+    expect(src).toMatch(/<details/);
+  });
   it('download article mirrors kuyhaa structure (meta/spec/install/box/related)', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('app/products/[slug]/page.tsx', 'utf8'));
     expect(src).toMatch(/oleh.*Pixelbay/);
