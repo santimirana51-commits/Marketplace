@@ -9,6 +9,7 @@ const retiredGeminiModels = new Set(['gemini-1.5-flash', 'gemini-2.5-flash']);
 const GEMINI_MODEL = !configuredGeminiModel || retiredGeminiModels.has(configuredGeminiModel)
   ? 'gemini-3-flash-preview'
   : configuredGeminiModel;
+const GEMINI_FALLBACK_MODELS = [GEMINI_MODEL, 'gemini-2.0-flash-lite', 'gemini-2.0-flash'];
 const OLLAMA_VISION_URL = process.env.OLLAMA_VISION_URL;
 const OLLAMA_VISION_MODEL = process.env.OLLAMA_VISION_MODEL || 'llava:7b';
 
@@ -53,6 +54,35 @@ async function analyzeWithOllamaVision(text: string, imageBase64: string): Promi
   } catch {
     return null;
   }
+}
+
+async function generateWithGemini(prompt: string): Promise<string> {
+  if (!genAI) throw new Error('GEMINI_API_KEY not configured');
+  let lastError: unknown;
+  for (const modelName of [...new Set(GEMINI_FALLBACK_MODELS)]) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: { temperature: 0.3, maxOutputTokens: 2000, responseMimeType: 'application/json' },
+      });
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const result = await model.generateContent(prompt);
+          return (await result.response).text();
+        } catch (error) {
+          lastError = error;
+          if (attempt === 0 && /503|429|overload|unavailable/i.test(error instanceof Error ? error.message : String(error))) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            continue;
+          }
+          break;
+        }
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('All Gemini models are unavailable');
 }
 
 export async function POST(req: Request) {
@@ -105,15 +135,6 @@ export async function POST(req: Request) {
         return errResponse('GEMINI_API_KEY not configured. Set it in .env.local or configure OLLAMA_VISION_URL for local vision model.', 500);
       }
       
-      const model = genAI.getGenerativeModel({ 
-        model: GEMINI_MODEL,
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 2000,
-          responseMimeType: 'application/json',
-        },
-      });
-
       let prompt = SYSTEM_PROMPT;
       if (imageBase64) {
         prompt += `\n\nUser input: ${textInput || 'Analyze this product'} [Image provided but vision model not configured - analyzing text only]`;
@@ -121,9 +142,7 @@ export async function POST(req: Request) {
         prompt += `\n\nUser input: ${textInput}`;
       }
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const resultText = response.text();
+      const resultText = await generateWithGemini(prompt);
       
       if (!resultText) return errResponse('AI returned empty response');
 
