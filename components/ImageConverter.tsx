@@ -113,6 +113,9 @@ export function ImageConverter() {
   return (
     <section className="space-y-5">
       <button type="button" className="flex min-h-44 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-brand-300 bg-brand-50 px-6 text-center hover:bg-brand-100" onClick={() => inputRef.current?.click()} onDragOver={(event) => event.preventDefault()} onDrop={onDrop}>
+        <span className="text-xs font-bold uppercase tracking-widest text-brand-600">Image Converter</span>
+        <span className="mt-1 text-lg font-extrabold text-brand-900">Ubah gambar menjadi SVG</span>
+        <span className="mt-1 max-w-xl text-sm text-zinc-600">Vectorize PNG, JPG, dan BMP langsung di browser dengan preview dan pengaturan warna.</span>
         <span className="text-4xl" aria-hidden="true">+</span>
         <span className="mt-2 font-semibold text-brand-800">Pilih gambar atau seret ke sini</span>
         <span className="mt-1 text-sm text-zinc-500">PNG, JPG, BMP, GIF, atau WebP · Bisa banyak file</span>
