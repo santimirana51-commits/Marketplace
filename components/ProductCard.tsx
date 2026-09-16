@@ -22,11 +22,11 @@ export function ProductCard({ p }: { p: ProductCardData }) {
         )}
       </div>
       <h3 className="mt-3 font-semibold leading-snug">{p.title}</h3>
-      <p className="mt-0.5 text-xs text-zinc-400">⚡ Instant download · Secure token</p>
+      <p className="mt-0.5 text-xs text-zinc-400">⚡ Unduhan instan · Token aman</p>
       {p.short_description ? <p className="mt-1 line-clamp-2 text-sm text-zinc-600">{p.short_description}</p> : null}
       <div className="mt-3 flex items-center justify-between">
         <span className={Number(p.price) <= 0 ? 'font-bold text-green-700' : 'font-bold'}>{formatPriceFree(Number(p.price), p.currency ?? 'USD')}</span>
-        <Link href={`/products/${p.slug}`} className="btn-secondary !px-3 !py-1.5 text-xs">View Product</Link>
+        <Link href={`/products/${p.slug}`} className="btn-secondary !px-3 !py-1.5 text-xs">Lihat Produk</Link>
       </div>
     </div>
   );

@@ -289,6 +289,37 @@ describe('18. drive file id extraction', () => {
   });
 });
 
+describe('19. spree-inspired refactor', () => {
+  it('PDP has breadcrumbs + accordions + related + sticky bar (ID)', async () => {
+    const fs = await import('node:fs/promises');
+    const src = await fs.readFile('app/products/[slug]/page.tsx', 'utf8');
+    expect(src).toMatch(/Breadcrumb/);
+    expect(src).toMatch(/Beranda/);
+    expect(src).toMatch(/Produk terkait/);
+    expect(src).toMatch(/fixed inset-x-0 bottom-0/);
+    expect(src).toMatch(/<details/);
+  });
+  it('account orders use a table with status badges (ID)', async () => {
+    const fs = await import('node:fs/promises');
+    const src = await fs.readFile('app/account/orders/page.tsx', 'utf8');
+    expect(src).toMatch(/Pesanan saya/);
+    expect(src).toMatch(/StatusBadge/);
+    expect(src).toMatch(/<table/);
+  });
+  it('admin has order detail (items/payments/summary/customer) + home stats', async () => {
+    const fs = await import('node:fs/promises');
+    const detail = await fs.readFile('app/admin/orders/[id]/page.tsx', 'utf8');
+    const home = await fs.readFile('app/admin/page.tsx', 'utf8');
+    const list = await fs.readFile('app/admin/orders/page.tsx', 'utf8');
+    expect(detail).toMatch(/Payments/);
+    expect(detail).toMatch(/Summary/);
+    expect(detail).toMatch(/Customer/);
+    expect(home).toMatch(/Revenue/);
+    expect(home).toMatch(/Top products/);
+    expect(list).toMatch(/admin\/orders\//);
+  });
+});
+
 describe('formatting', () => {
   it('formats USD', () => expect(formatPrice(29.99, 'USD')).toBe('$29.99'));
   it('formats bytes', () => {
