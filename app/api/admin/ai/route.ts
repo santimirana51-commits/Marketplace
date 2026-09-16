@@ -5,11 +5,16 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const configuredGeminiModel = process.env.GEMINI_MODEL?.trim();
-const retiredGeminiModels = new Set(['gemini-1.5-flash', 'gemini-2.5-flash']);
+const retiredGeminiModels = new Set([
+  'gemini-1.5-flash',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-flash',
+]);
 const GEMINI_MODEL = !configuredGeminiModel || retiredGeminiModels.has(configuredGeminiModel)
-  ? 'gemini-3-flash-preview'
+  ? 'gemini-3.6-flash'
   : configuredGeminiModel;
-const GEMINI_FALLBACK_MODELS = [GEMINI_MODEL, 'gemini-2.0-flash-lite', 'gemini-2.0-flash'];
+const GEMINI_FALLBACK_MODELS = [GEMINI_MODEL, 'gemini-3-flash-preview'];
 const OLLAMA_VISION_URL = process.env.OLLAMA_VISION_URL;
 const OLLAMA_VISION_MODEL = process.env.OLLAMA_VISION_MODEL || 'llava:7b';
 
