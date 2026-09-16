@@ -241,4 +241,14 @@ describe('11. portal admin surface', () => {
     expect(src).toMatch(/\/api\/files\//);
     expect(src).not.toMatch(/AddToCart|BuyNow|formatPrice/);
   });
+  it('download article mirrors kuyhaa structure (meta/spec/install/box/related)', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('app/products/[slug]/page.tsx', 'utf8'));
+    expect(src).toMatch(/oleh.*Pixelbay/);
+    expect(src).toMatch(/Spesifikasi file/);
+    expect(src).toMatch(/Langkah install/);
+    expect(src).toMatch(/Link download/);
+    expect(src).toMatch(/via \$/);
+    expect(src).toMatch(/Penting/);
+    expect(src).toMatch(/terkait/);
+  });
 });
