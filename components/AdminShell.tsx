@@ -6,6 +6,7 @@ import { useState } from 'react';
 const NAV = [
   { label: 'Dashboard', href: '/admin', icon: <IconGrid /> },
   { label: 'Products', href: '/admin/products', icon: <IconBox /> },
+  { label: 'Landing', href: '/admin/landing', icon: <IconText /> },
 ];
 
 function itemCls(active: boolean) {
@@ -78,6 +79,9 @@ export function AdminShell({ email, children }: { email?: string | null; childre
 
 function IconGrid() {
   return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><rect x="3" y="3" width="6" height="6" rx="1.5" /><rect x="11" y="3" width="6" height="6" rx="1.5" /><rect x="3" y="11" width="6" height="6" rx="1.5" /><rect x="11" y="11" width="6" height="6" rx="1.5" /></svg>);
+}
+function IconText() {
+  return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M4 5.5h12M4 10h12M4 14.5h7" strokeLinecap="round" /></svg>);
 }
 function IconBox() {
   return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M10 2.5 16.5 6v8L10 17.5 3.5 14V6L10 2.5Z" strokeLinejoin="round" /><path d="M3.5 6 10 9.5 16.5 6M10 9.5v8" strokeLinejoin="round" /></svg>);

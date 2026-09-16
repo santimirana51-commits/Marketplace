@@ -25,6 +25,7 @@ Jalankan di Supabase SQL editor (urut):
 6. `0006_external.sql` — kolom `product_files.external_url` (sumber luar opsional).
 7. `0007_content.sql` — kolom `products.install_steps` + `notice` (teks "Langkah install" & "Penting" per produk, editable via admin; kosong = default).
 8. `0008_category.sql` — kolom `products.category` (default `Lainnya`); daftar kanonik di `lib/categories.ts`; admin filter chips + select; storefront `?cat=`, ubin, breadcrumb, dan terkait memprioritaskan se-kategori.
+9. `0009_content.sql` — tabel `site_content` (key→value, RLS tanpa policy = service-role saja) untuk teks landing yang diedit via `/admin/landing` (hero, judul section, langkah, fitur, FAQ, CTA; kosong = default).
 
 ## 3. Environment variables
 

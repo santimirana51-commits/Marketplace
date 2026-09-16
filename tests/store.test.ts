@@ -330,6 +330,41 @@ describe('11f. permanent product delete', () => {
   });
 });
 
+describe('11g. landing CMS', () => {
+  it('defaults cover all editor keys; blank falls back', async () => {
+    const { CONTENT_DEFAULTS, CONTENT_KEYS, t, parsePipedList, parseFaqList } = await import('../lib/content');
+    expect(CONTENT_KEYS).toContain('hero_title_a');
+    expect(CONTENT_KEYS).toContain('faqs_text');
+    expect(t({}, 'hero_title_a')).toBe(CONTENT_DEFAULTS['hero_title_a']);
+    expect(t({ hero_title_a: 'X' }, 'hero_title_a')).toBe('X');
+    expect(t({ hero_title_a: '  ' }, 'hero_title_a')).toBe(CONTENT_DEFAULTS['hero_title_a']);
+    expect(t({}, 'unknown')).toBe('');
+    const steps = parsePipedList<{ n: string; title: string; text: string }>('A | a1\n\nB | b1 | b2', 'steps');
+    expect(steps).toEqual([{ n: '1', title: 'A', text: 'a1' }, { n: '2', title: 'B', text: 'b1 | b2' }]);
+    expect(parsePipedList('no-pipe-here', 'steps')).toEqual([]);
+    const feats = parsePipedList<{ icon: string; title: string; text: string }>('🚀 | T | x', 'features');
+    expect(feats).toEqual([{ icon: '🚀', title: 'T', text: 'x' }]);
+    const faqs = parseFaqList('Q? ||| A\nbad line\nQ2? ||| A2');
+    expect(faqs).toEqual([{ q: 'Q?', a: 'A' }, { q: 'Q2?', a: 'A2' }]);
+  });
+  it('content API allow-lists keys + requires admin; editor posts values', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('app/api/admin/content/route.ts', 'utf8'));
+    expect(src).toMatch(/requireAdmin/);
+    expect(src).toMatch(/CONTENT_KEYS\.includes/);
+    expect(src).toMatch(/upsert/);
+    const ed = await import('node:fs/promises').then((fs) => fs.readFile('components/LandingEditor.tsx', 'utf8'));
+    expect(ed).toMatch(/\/api\/admin\/content/);
+    const home = await import('node:fs/promises').then((fs) => fs.readFile('app/page.tsx', 'utf8'));
+    expect(home).toMatch(/getContentMap/);
+    expect(home).toMatch(/t\(cm, 'hero_title_a'\)/);
+  });
+  it('migration 0009 creates site_content locked to service role', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('supabase/migrations/0009_content.sql', 'utf8'));
+    expect(src).toMatch(/site_content/);
+    expect(src).toMatch(/enable row level security/);
+  });
+});
+
 describe('11. portal admin surface', () => {
   it('nav has Dashboard + Products only (no orders/customers)', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('components/AdminShell.tsx', 'utf8'));
