@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { formatBytes } from '@/lib/format';
 import { parseBulkLines, MAX_BULK_FILES } from '@/lib/validation';
 import { CATEGORIES } from '@/lib/categories';
@@ -29,14 +29,11 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
   const [bulk, setBulk] = useState('');
   const [busy, setBusy] = useState(false);
   
-  // AI Assistant state
+  // AI Assistant state (text-only, free tier)
   const [aiText, setAiText] = useState('');
-  const [aiImage, setAiImage] = useState<string | null>(null);
-  const [aiImagePreview, setAiImagePreview] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiResult, setAiResult] = useState<AIProductData | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function patch(payload: object) {
     const res = await fetch(`/api/admin/products/${product.id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
@@ -106,19 +103,16 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
   }
 
   async function processAI() {
-    if ((!aiText.trim() && !aiImage) || aiBusy) return;
+    if (!aiText.trim() || aiBusy) return;
     setAiBusy(true);
     setAiError(null);
     setAiResult(null);
     
     try {
-      const formData = new FormData();
-      if (aiText.trim()) formData.append('text', aiText.trim());
-      if (aiImage) formData.append('image', aiImage);
-      
       const res = await fetch('/api/admin/ai', {
         method: 'POST',
-        body: formData,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text: aiText.trim() }),
       });
       
       const data = await res.json();
@@ -140,49 +134,6 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
     // For now, we'll update the product state by triggering a re-render with new defaultValues
     // Since we can't easily update defaultValue, we'll show the AI result for manual copy
     setMsg('AI suggestions ready. Copy values to form fields above.');
-  }
-
-  function handleImagePaste(e: React.ClipboardEvent) {
-    const items = e.clipboardData.items;
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        const file = item.getAsFile();
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const base64 = reader.result as string;
-            setAiImage(base64);
-            setAiImagePreview(base64);
-          };
-          reader.readAsDataURL(file);
-        }
-        break;
-      }
-    }
-  }
-
-  function handleImageDrop(e: React.DragEvent) {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setAiImage(base64);
-        setAiImagePreview(base64);
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault();
-  }
-
-  function clearImage() {
-    setAiImage(null);
-    setAiImagePreview(null);
-    fileInputRef.current && (fileInputRef.current.value = '');
   }
 
   return (
@@ -233,74 +184,25 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
           <span className="text-lg">🤖</span>
           <h3 className="font-semibold text-brand-700">AI Assistant (Free - Groq Llama 3)</h3>
         </div>
-        <p className="text-xs text-zinc-500 mb-3">Tempel teks deskripsi produk atau upload gambar — AI akan mengekstrak info & mengisi otomatis field di atas.</p>
+        <p className="text-xs text-zinc-500 mb-3">Tempel teks deskripsi produk — AI akan mengekstrak info & mengisi otomatis field di atas. <strong>Catatan: Tier gratis hanya mendukung teks, tidak bisa analisis gambar.</strong></p>
         
         <div className="space-y-3">
           <div>
             <label className="label">Teks Produk (deskripsi, spesifikasi, dll)</label>
             <textarea
               className="input"
-              rows={3}
+              rows={4}
               placeholder="Contoh: Jual Laptop Gaming ASUS ROG Strix G15, Ryzen 7, RTX 3060, 16GB RAM, 512GB SSD, Harga 15.000.000..."
               value={aiText}
               onChange={(e) => setAiText(e.target.value)}
-              onPaste={handleImagePaste}
             />
-          </div>
-
-          <div className="relative">
-            <label className="label">Gambar Produk (drag & drop atau klik)</label>
-            <div
-              className="border-2 border-dashed border-zinc-300 rounded-lg p-6 text-center hover:border-brand-400 transition-colors"
-              onDrop={handleImageDrop}
-              onDragOver={handleDragOver}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      const base64 = reader.result as string;
-                      setAiImage(base64);
-                      setAiImagePreview(base64);
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
-              />
-              {aiImagePreview ? (
-                <div className="relative inline-block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={aiImagePreview} alt="Preview" className="max-h-40 rounded" />
-                  <button
-                    type="button"
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
-                    onClick={(e) => { e.stopPropagation(); clearImage(); }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <span className="text-lg">📷</span>
-                  <p className="text-zinc-500">Klik atau tarik gambar ke sini</p>
-                  <p className="text-xs text-zinc-400">Paste (Ctrl+V) juga bisa di area teks di atas</p>
-                </div>
-              )}
-            </div>
           </div>
 
           <button
             type="button"
             className="btn-primary w-full"
             onClick={processAI}
-            disabled={aiBusy || (!aiText.trim() && !aiImage)}
+            disabled={aiBusy || !aiText.trim()}
           >
             {aiBusy ? 'Menganalisis...' : 'Analisis & Ekstrak Info'}
           </button>

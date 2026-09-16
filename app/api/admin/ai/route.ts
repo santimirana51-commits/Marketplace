@@ -1,9 +1,9 @@
 import { requireAdmin } from '@/lib/auth';
 import { errResponse } from '@/lib/validation';
-import Groq from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
-const OLLAMA_VISION_URL = process.env.OLLAMA_VISION_URL; // e.g., http://localhost:11434/api/generate
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+const OLLAMA_VISION_URL = process.env.OLLAMA_VISION_URL;
 const OLLAMA_VISION_MODEL = process.env.OLLAMA_VISION_MODEL || 'llava:7b';
 
 const SYSTEM_PROMPT = `You are an AI assistant for an e-commerce admin panel. 
@@ -87,7 +87,6 @@ export async function POST(req: Request) {
     let usedVision = false;
 
     if (imageBase64 && OLLAMA_VISION_URL) {
-      // Try local Ollama vision model (LLaVA)
       const visionResult = await analyzeWithOllamaVision(textInput, imageBase64);
       if (visionResult) {
         parsed = visionResult;
@@ -96,36 +95,34 @@ export async function POST(req: Request) {
     }
 
     if (!usedVision) {
-      // Fallback to Groq text-only (Llama 3.1)
-      if (!groq) {
-        return errResponse('GROQ_API_KEY not configured. Set it in .env.local or configure OLLAMA_VISION_URL for local vision model.', 500);
+      if (!genAI) {
+        return errResponse('GEMINI_API_KEY not configured. Set it in .env.local or configure OLLAMA_VISION_URL for local vision model.', 500);
       }
-      const messages: Groq.Chat.ChatCompletionMessageParam[] = [
-        { role: 'system', content: SYSTEM_PROMPT },
-      ];
-
-      if (imageBase64) {
-        messages.push({
-          role: 'user',
-          content: `${textInput || 'Analyze this product'} [Image provided but vision model not configured - analyzing text only]`,
-        });
-      } else {
-        messages.push({ role: 'user', content: textInput });
-      }
-
-      const completion = await groq.chat.completions.create({
-        model: 'llama-3.1-70b-versatile',
-        messages,
-        temperature: 0.3,
-        max_tokens: 2000,
-        response_format: { type: 'json_object' },
+      
+      const model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash',
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 2000,
+          responseMimeType: 'application/json',
+        },
       });
 
-      const result = completion.choices[0]?.message?.content;
-      if (!result) return errResponse('AI returned empty response');
+      let prompt = SYSTEM_PROMPT;
+      if (imageBase64) {
+        prompt += `\n\nUser input: ${textInput || 'Analyze this product'} [Image provided but vision model not configured - analyzing text only]`;
+      } else {
+        prompt += `\n\nUser input: ${textInput}`;
+      }
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const resultText = response.text();
+      
+      if (!resultText) return errResponse('AI returned empty response');
 
       try {
-        parsed = JSON.parse(result);
+        parsed = JSON.parse(resultText);
       } catch {
         return errResponse('AI returned invalid JSON');
       }
