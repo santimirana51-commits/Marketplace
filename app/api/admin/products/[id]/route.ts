@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/lib/auth';
 import { adminClient } from '@/lib/supabase/admin';
-import { adminFileSchema, adminProductSchema, errResponse, isSafeExternalUrl, classifyAttachmentInput } from '@/lib/validation';
+import { adminFileSchema, adminProductSchema, errResponse, isSafeExternalUrl, classifyAttachmentInput, MAX_BULK_FILES } from '@/lib/validation';
 import { validateDriveFile, isDriveConfigured } from '@/lib/google-drive';
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -13,7 +13,53 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   // File attach/remove actions
   if (body && typeof body === 'object' && 'action' in (body as object)) {
     const admin = adminClient();
-    const b = body as { action: string; fileId?: string; name?: string; google_drive_file_id?: string; external_url?: string };
+    const b = body as { action: string; fileId?: string; name?: string; google_drive_file_id?: string; external_url?: string; items?: { name?: string; google_drive_file_id?: string; external_url?: string }[] };
+    // Bulk attach: many links at once, per-line results (cap enforced).
+    if (b.action === 'addFiles' && Array.isArray(b.items)) {
+      const raws = b.items.slice(0, MAX_BULK_FILES);
+      if (!raws.length) return errResponse('Tidak ada link');
+      const files: unknown[] = [];
+      const errors: { line: number; error: string }[] = [];
+      for (let idx = 0; idx < raws.length; idx++) {
+        const r = raws[idx] ?? {};
+        const { driveId, url } = classifyAttachmentInput(
+          String(r.google_drive_file_id ?? ''), String(r.external_url ?? ''),
+        );
+        const parsed = adminFileSchema.safeParse({ name: r.name, google_drive_file_id: driveId, external_url: url });
+        if (!parsed.success) {
+          errors.push({ line: idx + 1, error: parsed.error.errors[0]?.message ?? 'Invalid input' });
+          continue;
+        }
+        try {
+          if (!driveId && url) {
+            if (!isSafeExternalUrl(url)) throw new Error('URL luar tidak aman (hanya http/https publik)');
+            const ins = await admin.from('product_files').insert({
+              product_id: params.id, name: parsed.data.name || url,
+              google_drive_file_id: '', external_url: url,
+            }).select('*').single();
+            if (ins.error) throw new Error(ins.error.message);
+            files.push(ins.data);
+          } else {
+            const meta = await validateDriveFile(driveId);
+            const ins = await admin.from('product_files').insert({
+              product_id: params.id, name: parsed.data.name || meta.name,
+              google_drive_file_id: driveId,
+              google_drive_mime_type: meta.mimeType, file_size: meta.size ?? null,
+              external_url: url || null,
+            }).select('*').single();
+            if (ins.error) throw new Error(ins.error.message);
+            files.push(ins.data);
+          }
+        } catch (e) {
+          if (!isDriveConfigured() && driveId) {
+            errors.push({ line: idx + 1, error: 'Server Drive credentials missing' });
+          } else {
+            errors.push({ line: idx + 1, error: e instanceof Error ? e.message : 'Failed' });
+          }
+        }
+      }
+      return Response.json({ files, errors }, { status: files.length ? 201 : 400 });
+    }
     if (b.action === 'addFile') {
       const { driveId, url } = classifyAttachmentInput(
         String(b.google_drive_file_id ?? ''), String(b.external_url ?? ''),

@@ -77,6 +77,17 @@ export function classifyAttachmentInput(rawDrive: string, rawUrl: string): { dri
   return { driveId, url };
 }
 
+export const MAX_BULK_FILES = 20;
+
+/** Split bulk paste into clean lines (one link per line), capped. */
+export function parseBulkLines(text: string): string[] {
+  return (text ?? '')
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, MAX_BULK_FILES);
+}
+
 export const adminFileSchema = z.object({
   // Optional: empty falls back to the Drive file name server-side.
   name: z.string().max(300).default(''),

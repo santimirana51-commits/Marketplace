@@ -232,6 +232,23 @@ describe('11b2. forgiving attach input routing', () => {
   });
 });
 
+describe('11c. bulk attach', () => {
+  it('parses lines, skips empties, caps at MAX', async () => {
+    const { parseBulkLines, MAX_BULK_FILES } = await import('../lib/validation');
+    expect(parseBulkLines('  a\n\nb\r\n  \nc  ')).toEqual(['a', 'b', 'c']);
+    expect(parseBulkLines('')).toEqual([]);
+    const many = Array.from({ length: 50 }, (_, i) => `https://example.com/${i}.zip`).join('\n');
+    expect(parseBulkLines(many)).toHaveLength(MAX_BULK_FILES);
+  });
+  it('bulk route validates per line and reports errors', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('app/api/admin/products/[id]/route.ts', 'utf8'));
+    expect(src).toMatch(/addFiles/);
+    expect(src).toMatch(/MAX_BULK_FILES/);
+    expect(src).toMatch(/errors/);
+    expect(src).toMatch(/classifyAttachmentInput/);
+  });
+});
+
 describe('11. portal admin surface', () => {
   it('nav has Dashboard + Products only (no orders/customers)', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('components/AdminShell.tsx', 'utf8'));

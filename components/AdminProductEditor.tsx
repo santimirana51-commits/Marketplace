@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { formatBytes } from '@/lib/format';
+import { parseBulkLines, MAX_BULK_FILES } from '@/lib/validation';
 
 type FileRow = { id: string; name: string; google_drive_file_id: string; google_drive_mime_type?: string | null; file_size?: number | null; external_url?: string | null };
 
@@ -11,6 +12,8 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
   const [msg, setMsg] = useState<string | null>(null);
   const [driveName, setDriveName] = useState('');
   const [driveId, setDriveId] = useState('');
+  const [bulk, setBulk] = useState('');
+  const [busy, setBusy] = useState(false);
 
   async function patch(payload: object) {
     const res = await fetch(`/api/admin/products/${product.id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
@@ -43,6 +46,26 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
       setDriveName(''); setDriveId('');
       setMsg(wasUrl ? 'External link attached.' : 'File validated against Drive and attached.');
     } catch (e) { setMsg(e instanceof Error ? e.message : 'Failed'); }
+  }
+
+  async function addBulk() {
+    const lines = parseBulkLines(bulk);
+    if (!lines.length || busy) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'addFiles', items: lines.map((l) => ({ name: '', google_drive_file_id: l })) }),
+      });
+      const data = await res.json();
+      if (!res.ok && !(data.files?.length)) throw new Error(data.errors?.[0]?.error ?? data.error ?? 'Failed');
+      setFiles((f) => [...f, ...(data.files ?? [])]);
+      setBulk('');
+      const fails = (data.errors ?? []).map((e: { line: number; error: string }) => `baris ${e.line}: ${e.error}`).join('; ');
+      setMsg(`${(data.files ?? []).length} file ditambah.${fails ? ` Gagal: ${fails}` : ''}`);
+    } catch (e) { setMsg(e instanceof Error ? e.message : 'Failed'); }
+    finally { setBusy(false); }
   }
 
   async function removeFile(id: string) {
@@ -86,6 +109,13 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
           <input className="input" placeholder="Display name (opsional)" value={driveName} onChange={(e) => setDriveName(e.target.value)} />
           <input className="input" placeholder="Link Drive / ID / URL luar" value={driveId} onChange={(e) => setDriveId(e.target.value)} />
           <button type="button" className="btn-secondary" onClick={addFile}>Attach</button>
+        </div>
+        <div className="mt-3 border-t pt-3">
+          <p className="text-xs font-semibold">Bulk: banyak link sekaligus (satu per baris, maks {MAX_BULK_FILES})</p>
+          <textarea className="input mt-2" rows={4} placeholder={'https://drive.google.com/file/d/…\nhttps://www.mediafire.com/file/…'} value={bulk} onChange={(e) => setBulk(e.target.value)} />
+          <button type="button" className="btn-download mt-2" disabled={busy || !parseBulkLines(bulk).length} onClick={addBulk}>
+            {busy ? 'Menambah…' : `Attach ${parseBulkLines(bulk).length} link`}
+          </button>
         </div>
       </div>
 
