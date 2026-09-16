@@ -9,31 +9,36 @@ type P = {
   thumbnail_url?: string | null; featured?: boolean | null;
 };
 
+export const metadata = {
+  title: 'Pixelbay — Download Digital Instan',
+  description: 'Template, aset desain, PDF, dan script. Bayar aman, dapat link download privat — tanpa URL publik.',
+};
+
 const TILES = [
-  { label: 'Templates', q: 'template', icon: '🎨', blurb: 'Ready-to-use layouts & kits' },
-  { label: 'Design', q: 'design', icon: '🖌️', blurb: 'Graphics & creative assets' },
-  { label: 'PDF & Docs', q: 'pdf', icon: '📄', blurb: 'Guides, ebooks & documents' },
-  { label: 'Scripts & Code', q: 'script', icon: '💻', blurb: 'Snippets, tools & automation' },
+  { label: 'Template', q: 'template', icon: '🎨', blurb: 'Layout & kit siap pakai' },
+  { label: 'Desain', q: 'design', icon: '🖌️', blurb: 'Grafis & aset kreatif' },
+  { label: 'PDF & Dokumen', q: 'pdf', icon: '📄', blurb: 'Panduan, ebook & dokumen' },
+  { label: 'Script & Kode', q: 'script', icon: '💻', blurb: 'Snippet, tools & otomasi' },
 ];
 
 const STEPS = [
-  { n: '1', title: 'Pick your file', text: 'Browse the catalog or search. Free files are marked green, premium ones show clear pricing.' },
-  { n: '2', title: 'Check out securely', text: 'Pay with QRIS, bank transfer, e-wallet, or cards. Free files just need a sign-in — no payment.' },
-  { n: '3', title: 'Download instantly', text: 'Get a private expiring link in your account. Re-download while it stays valid.' },
+  { n: '1', title: 'Pilih file-nya', text: 'Jelajahi katalog atau cari. File gratis bertanda hijau, yang premium harganya jelas.' },
+  { n: '2', title: 'Bayar dengan aman', text: 'QRIS, transfer bank, e-wallet, atau kartu. File gratis cukup masuk akun — tanpa bayar.' },
+  { n: '3', title: 'Unduh langsung', text: 'Dapatkan link privat kedaluwarsa di akun Anda. Unduh ulang selama masih berlaku.' },
 ];
 
 const FEATURES = [
-  { icon: '🔒', title: 'Private delivery', text: 'Files stream from secure storage through expiring hashed tokens. Never public links.' },
-  { icon: '⚡', title: 'Instant fulfillment', text: 'Paid orders confirm by webhook in about a minute. Free orders are instant.' },
-  { icon: '🛡️', title: 'Buyer protection', text: 'Server-verified prices and payments. What you see is exactly what you get.' },
+  { icon: '🔒', title: 'Pengiriman privat', text: 'File mengalir dari penyimpanan aman lewat token hash kedaluwarsa. Tanpa link publik.' },
+  { icon: '⚡', title: 'Fulfillment instan', text: 'Pesanan bayar terkonfirmasi webhook sekitar semenit. Pesanan gratis langsung jadi.' },
+  { icon: '🛡️', title: 'Perlindungan pembeli', text: 'Harga dan pembayaran terverifikasi server. Yang terlihat itulah yang didapat.' },
 ];
 
 const FAQS = [
-  { q: 'How do I receive my files?', a: 'After checkout, open My Account → your order → Download. Each file gets a private link that expires after 72 hours or 5 downloads (whichever comes first).' },
-  { q: 'Are there really free files?', a: 'Yes. Products marked Free need only a sign-in — no payment, same secure delivery as paid files.' },
-  { q: 'Which payments do you accept?', a: 'QRIS, bank virtual accounts, e-wallets, and cards via Midtrans, processed in IDR. International cards via Stripe where available.' },
-  { q: 'Can I re-download later?', a: 'Yes, while your link stays valid. Need it again afterwards? Contact us from your account email and we will help.' },
-  { q: 'Do I get the source files?', a: 'You get exactly the files listed on the product page (name, type, and size shown before you pay).' },
+  { q: 'Bagaimana cara menerima file saya?', a: 'Setelah checkout, buka Akun Saya → pesanan Anda → Unduh. Tiap file dapat link privat yang kedaluwarsa setelah 72 jam atau 5× unduhan (mana yang dulu).' },
+  { q: 'Benarkah ada file gratis?', a: 'Ya. Produk bertanda Gratis hanya butuh masuk akun — tanpa bayar, pengiriman sama amannya dengan file berbayar.' },
+  { q: 'Pembayaran apa saja yang diterima?', a: 'QRIS, virtual account bank, e-wallet, dan kartu via Midtrans, diproses dalam IDR. Kartu internasional via Stripe bila tersedia.' },
+  { q: 'Bisakah unduh ulang nanti?', a: 'Bisa, selama link masih berlaku. Butuh lagi setelahnya? Hubungi kami dari email akun Anda.' },
+  { q: 'Apakah dapat file sumbernya?', a: 'Anda dapat persis file yang terdaftar di halaman produk (nama, tipe, dan ukuran tampil sebelum bayar).' },
 ];
 
 function countFor(products: P[], q: string) {
@@ -52,18 +57,18 @@ export default async function Home() {
       <section className="overflow-hidden border-b bg-gradient-to-b from-brand-50 via-white to-white">
         <div className="container-x py-14 text-center sm:py-20">
           <Link href="/products" className="inline-flex items-center gap-2 rounded-full border border-brand-600/20 bg-white px-4 py-1.5 text-xs font-bold text-brand-700 shadow-sm hover:border-brand-600/40">
-            <span className="h-2 w-2 rounded-full bg-green-500" /> {products.length} digital product{products.length === 1 ? '' : 's'} live now
+            <span className="h-2 w-2 rounded-full bg-green-500" /> {products.length} produk digital live
           </Link>
           <h1 className="mx-auto mt-5 max-w-4xl text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-            Premium files.{' '}
-            <span className="bg-gradient-to-r from-brand-600 to-green-600 bg-clip-text text-transparent">Instant delivery.</span>
+            File premium.{' '}
+            <span className="bg-gradient-to-r from-brand-600 to-green-600 bg-clip-text text-transparent">Pengiriman instan.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-zinc-600 sm:text-lg">
-            Templates, design assets, PDFs, and scripts. Pay securely, get a private download link — no public URLs, ever.
+            Template, aset desain, PDF, dan script. Bayar aman, dapat link download privat — tanpa URL publik.
           </p>
           <form action="/products" method="get" className="mx-auto mt-8 flex max-w-xl items-center gap-2 rounded-full border border-zinc-300 bg-white p-1.5 shadow-lg shadow-brand-600/5 focus-within:border-brand-500" role="search">
-            <input name="q" type="search" placeholder="Try “template”, “pdf”, “script”… " className="w-full bg-transparent px-4 py-2 text-base outline-none placeholder:text-zinc-400" aria-label="Search products" />
-            <button type="submit" className="btn-primary shrink-0 !rounded-full">Search</button>
+            <input name="q" type="search" placeholder="Coba “template”, “pdf”, “script”… " className="w-full bg-transparent px-4 py-2 text-base outline-none placeholder:text-zinc-400" aria-label="Cari produk" />
+            <button type="submit" className="btn-primary shrink-0 !rounded-full">Cari</button>
           </form>
           <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
             {NAV_CATS.map((c) => (
@@ -73,10 +78,10 @@ export default async function Home() {
             ))}
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-zinc-600">
-            <span>✅ <strong>{products.length}</strong> products</span>
-            <span>🔒 Secure checkout</span>
-            <span>⚡ ~1-min fulfillment</span>
-            <span>🎁 Free files included</span>
+            <span>✅ <strong>{products.length}</strong> produk</span>
+            <span>🔒 Checkout aman</span>
+            <span>⚡ Terkonfirmasi ±1 menit</span>
+            <span>🎁 Ada file gratis</span>
           </div>
         </div>
       </section>
@@ -84,8 +89,8 @@ export default async function Home() {
       {/* Category tiles */}
       <section className="container-x mt-12">
         <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-bold">Start from a category</h2>
-          <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">View all →</Link>
+          <h2 className="text-2xl font-bold">Mulai dari kategori</h2>
+          <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">Lihat semua →</Link>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {TILES.map((t) => (
@@ -93,7 +98,7 @@ export default async function Home() {
               <p className="text-3xl">{t.icon}</p>
               <p className="mt-3 font-bold group-hover:text-brand-700">{t.label}</p>
               <p className="text-xs text-zinc-500">{t.blurb}</p>
-              <p className="mt-2 text-xs font-semibold text-zinc-400">{countFor(products, t.q)} item{countFor(products, t.q) === 1 ? '' : 's'} →</p>
+              <p className="mt-2 text-xs font-semibold text-zinc-400">{countFor(products, t.q)} produk →</p>
             </Link>
           ))}
         </div>
@@ -102,30 +107,30 @@ export default async function Home() {
       {/* Featured */}
       <section className="container-x mt-14">
         <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-bold">Featured</h2>
-          <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">View all →</Link>
+          <h2 className="text-2xl font-bold">Unggulan</h2>
+          <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">Lihat semua →</Link>
         </div>
         <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {featured.length ? featured.map((p) => <ProductCard key={p.slug} p={{ ...p, price: Number(p.price) }} />) : <p className="text-sm text-zinc-500">No featured products yet.</p>}
+          {featured.length ? featured.map((p) => <ProductCard key={p.slug} p={{ ...p, price: Number(p.price) }} />) : <p className="text-sm text-zinc-500">Belum ada produk unggulan.</p>}
         </div>
       </section>
 
       {/* Latest */}
       <section className="container-x mt-14">
         <div className="flex items-end justify-between">
-          <h2 className="text-2xl font-bold">Fresh uploads</h2>
-          <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">View all →</Link>
+          <h2 className="text-2xl font-bold">Baru diunggah</h2>
+          <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">Lihat semua →</Link>
         </div>
         <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {latest.length ? latest.map((p) => <ProductCard key={p.slug} p={{ ...p, price: Number(p.price) }} />) : <p className="text-sm text-zinc-500">No published products yet. Add some from /admin.</p>}
+          {latest.length ? latest.map((p) => <ProductCard key={p.slug} p={{ ...p, price: Number(p.price) }} />) : <p className="text-sm text-zinc-500">Belum ada produk. Tambahkan dari /admin.</p>}
         </div>
       </section>
 
       {/* How it works */}
       <section className="mt-16 border-y bg-zinc-950 text-white">
         <div className="container-x py-14">
-          <p className="text-xs font-bold uppercase tracking-widest text-green-400">How it works</p>
-          <h2 className="mt-2 text-3xl font-extrabold">From click to file in 3 steps</h2>
+          <p className="text-xs font-bold uppercase tracking-widest text-green-400">Cara kerja</p>
+          <h2 className="mt-2 text-3xl font-extrabold">Dari klik ke file dalam 3 langkah</h2>
           <div className="mt-8 grid gap-6 md:grid-cols-3">
             {STEPS.map((s) => (
               <div key={s.n} className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -140,7 +145,7 @@ export default async function Home() {
 
       {/* Why */}
       <section className="container-x mt-14">
-        <h2 className="text-2xl font-bold">Why Pixelbay</h2>
+        <h2 className="text-2xl font-bold">Kenapa Pixelbay</h2>
         <div className="mt-4 grid gap-5 md:grid-cols-3">
           {FEATURES.map((f) => (
             <div key={f.title} className="card">
@@ -154,7 +159,7 @@ export default async function Home() {
 
       {/* FAQ */}
       <section id="faq" className="container-x mt-14 max-w-3xl">
-        <h2 className="text-2xl font-bold">Questions, answered</h2>
+        <h2 className="text-2xl font-bold">Pertanyaan umum</h2>
         <div className="mt-4 space-y-3">
           {FAQS.map((f) => (
             <details key={f.q} className="card !p-0 group">
@@ -168,8 +173,8 @@ export default async function Home() {
       {/* CTA */}
       <section className="container-x mt-14">
         <div className="card flex flex-col items-center gap-3 bg-gradient-to-r from-brand-700 to-green-700 text-white sm:flex-row sm:justify-between">
-          <div><p className="text-lg font-bold">Ready to grab your files?</p><p className="text-sm text-white/80">Search the catalog — free files need only a sign-in.</p></div>
-          <Link href="/products" className="btn-download !bg-white !text-green-700 hover:!bg-green-50">Start shopping</Link>
+          <div><p className="text-lg font-bold">Siap ambil file Anda?</p><p className="text-sm text-white/80">Cari di katalog — file gratis cukup masuk akun.</p></div>
+          <Link href="/products" className="btn-download !bg-white !text-green-700 hover:!bg-green-50">Mulai belanja</Link>
         </div>
       </section>
     </div>
