@@ -118,13 +118,21 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return errResponse(attempt.error.message, 400);
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
     await requireAdmin();
   } catch (e) {
     return errResponse('Forbidden', (e as { status?: number }).status ?? 403);
   }
-  // Soft-archive instead of hard delete to preserve order history.
-  await adminClient().from('products').update({ status: 'archived' }).eq('id', params.id);
+  const hard = new URL(req.url).searchParams.get('hard') === '1';
+  const admin = adminClient();
+  if (hard) {
+    // Permanent: product_files rows follow via ON DELETE CASCADE.
+    const { error } = await admin.from('products').delete().eq('id', params.id);
+    if (error) return errResponse(error.message, 400);
+    return Response.json({ ok: true, deleted: true });
+  }
+  // Default: soft-archive (reversible via edit page).
+  await admin.from('products').update({ status: 'archived' }).eq('id', params.id);
   return Response.json({ ok: true });
 }

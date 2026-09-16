@@ -314,6 +314,22 @@ describe('11e. categories', () => {
   });
 });
 
+describe('11f. permanent product delete', () => {
+  it('DELETE ?hard=1 removes product (files follow via cascade)', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('app/api/admin/products/[id]/route.ts', 'utf8'));
+    expect(src).toMatch(/hard.*=== '1'|=== '1'.*hard/);
+    expect(src).toMatch(/\.delete\(\)\.eq\('id'/);
+    const sql = await import('node:fs/promises').then((fs) => fs.readFile('supabase/migrations/0001_schema.sql', 'utf8'));
+    expect(sql).toMatch(/product_files[\s\S]*on delete cascade/);
+  });
+  it('row actions confirm before deleting', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('components/ProductRowActions.tsx', 'utf8'));
+    expect(src).toMatch(/confirm\(/);
+    expect(src).toMatch(/\?hard=1/);
+    expect(src).toMatch(/router\.refresh/);
+  });
+});
+
 describe('11. portal admin surface', () => {
   it('nav has Dashboard + Products only (no orders/customers)', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('components/AdminShell.tsx', 'utf8'));

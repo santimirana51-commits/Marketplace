@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getSessionUser, isAdminEmail } from '@/lib/auth';
 import { adminClient } from '@/lib/supabase/admin';
 import { CATEGORIES, toCategory } from '@/lib/categories';
+import { ProductRowActions } from '@/components/ProductRowActions';
 
 export default async function AdminProducts({ searchParams }: { searchParams: { cat?: string } }) {
   const user = await getSessionUser();
@@ -41,7 +42,7 @@ export default async function AdminProducts({ searchParams }: { searchParams: { 
               <td><span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs">{pr.category}</span></td>
               <td className="text-zinc-500">{pr.slug}</td>
               <td>{pr.status}</td>
-              <td><Link href={`/admin/products/${pr.id}`} className="underline">Edit</Link></td>
+              <td><ProductRowActions id={pr.id} title={pr.title} /></td>
             </tr>
           ))}
         </tbody>
