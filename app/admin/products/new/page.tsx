@@ -48,7 +48,7 @@ export default function NewProductPage() {
         <div><label className="label">Catatan penting (opsional)</label><textarea name="notice" rows={3} className="input" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Status</label><select name="status" className="input"><option value="draft">draft</option><option value="published">published</option><option value="archived">archived</option></select></div>
-          <div><label className="label">Kategori</label><select name="category" className="input" defaultValue="Lainnya">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+          <div><label className="label">Kategori (pilih atau ketik baru)</label><input name="category" className="input" defaultValue="Lainnya" maxLength={50} list="cat-list" /><datalist id="cat-list">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist></div>
         </div>
         <div className="flex items-end gap-2 pb-2"><input type="checkbox" name="featured" id="f" /><label htmlFor="f" className="text-sm">Featured</label></div>
         <button className="btn-primary w-full" disabled={loading}>{loading ? 'Saving…' : 'Create'}</button>

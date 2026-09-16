@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { listPublishedProducts } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
-import { NAV_CATS } from '@/lib/nav';
-import { CATEGORIES, toCategory } from '@/lib/categories';
+import { toCategory, CATEGORIES } from '@/lib/categories';
 
 export const metadata = { title: 'Semua File' };
 
@@ -14,14 +13,15 @@ type P = {
 
 export default async function ProductsPage({ searchParams }: { searchParams: { q?: string; cat?: string } }) {
   const q = (searchParams.q ?? '').trim();
-  const cat = (CATEGORIES as readonly string[]).includes(searchParams.cat ?? '')
-    ? (searchParams.cat as string)
-    : null;
+  const cat = (searchParams.cat ?? '').trim().slice(0, 50) || null;
   const all = (((await listPublishedProducts(100).catch(() => [])) as P[]))
     .map((p) => ({ ...p, category: toCategory(p.category) }));
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  // Dynamic chips: canonical first, then any manual labels found in data.
+  const seen = [...new Set(all.map((p) => p.category))];
+  const chips = [...CATEGORIES.filter((c) => seen.includes(c)), ...seen.filter((c) => !(CATEGORIES as readonly string[]).includes(c)).sort()];
   const products = all.filter((p) => {
-    if (cat && p.category !== cat) return false;
+    if (cat && p.category.toLowerCase() !== cat.toLowerCase()) return false;
     if (!words.length) return true;
     const hay = `${p.title} ${p.short_description ?? ''} ${p.description ?? ''}`.toLowerCase();
     return words.every((w) => hay.includes(w));
@@ -37,9 +37,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: { q
         {q || cat ? <> · <Link href="/products" className="underline">Hapus filter</Link></> : null}
       </p>
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
-        {NAV_CATS.map((c) => (
-          <Link key={c.label} href={c.href} className="rounded-full border border-zinc-300 bg-white px-3 py-1 font-medium text-zinc-700 hover:border-brand-500 hover:text-brand-700">
-            {c.label}
+        <Link href="/products" className="rounded-full border border-zinc-300 bg-white px-3 py-1 font-medium text-zinc-700 hover:border-brand-500 hover:text-brand-700">
+          Semua
+        </Link>
+        {chips.map((c) => (
+          <Link key={c} href={`/products?cat=${encodeURIComponent(c)}`} className="rounded-full border border-zinc-300 bg-white px-3 py-1 font-medium text-zinc-700 hover:border-brand-500 hover:text-brand-700">
+            {c}
           </Link>
         ))}
       </div>

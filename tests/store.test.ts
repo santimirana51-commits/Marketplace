@@ -276,19 +276,21 @@ describe('11d. editable install steps + notice', () => {
 });
 
 describe('11e. categories', () => {
-  it('normalizes to canonical labels, defaults Lainnya', async () => {
+  it('normalizes canonical casing, keeps manual labels, defaults Lainnya', async () => {
     const { toCategory, CATEGORIES, DEFAULT_CATEGORY } = await import('../lib/categories');
     expect(CATEGORIES).toContain('Game');
     expect(DEFAULT_CATEGORY).toBe('Lainnya');
     expect(toCategory('game')).toBe('Game');
     expect(toCategory('  PDF & Dokumen ')).toBe('PDF & Dokumen');
     expect(toCategory(null)).toBe('Lainnya');
-    expect(toCategory('ngawur')).toBe('Lainnya');
+    expect(toCategory('  ')).toBe('Lainnya');
+    expect(toCategory('Anime Sub Indo')).toBe('Anime Sub Indo');
   });
-  it('validation accepts canonical, rejects other', async () => {
+  it('validation accepts canonical + manual labels', async () => {
     const { adminProductSchema } = await import('../lib/validation');
     expect(adminProductSchema.safeParse({ title: 'T', slug: 't', category: 'Game' }).success).toBe(true);
-    expect(adminProductSchema.safeParse({ title: 'T', slug: 't', category: 'Ngawur' }).success).toBe(false);
+    expect(adminProductSchema.safeParse({ title: 'T', slug: 't', category: 'Anime Sub Indo' }).success).toBe(true);
+    expect(adminProductSchema.safeParse({ title: 'T', slug: 't', category: '' }).success).toBe(true);
   });
   it('admin list filters + shows category; forms offer select', async () => {
     const fs = await import('node:fs/promises');
@@ -300,7 +302,7 @@ describe('11e. categories', () => {
     const fs = await import('node:fs/promises');
     const list = await fs.readFile('app/products/page.tsx', 'utf8');
     expect(list).toMatch(/searchParams.*cat|cat.*searchParams/);
-    expect(list).toMatch(/p\.category !== cat/);
+    expect(list).toMatch(/p\.category\.toLowerCase\(\) !== cat\.toLowerCase\(\)/);
     expect(await fs.readFile('app/page.tsx', 'utf8')).toMatch(/products\?cat=/);
     const detail = await fs.readFile('app/products/[slug]/page.tsx', 'utf8');
     expect(detail).toMatch(/toCategory/);

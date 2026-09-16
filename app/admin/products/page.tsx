@@ -12,8 +12,9 @@ export default async function AdminProducts({ searchParams }: { searchParams: { 
     .map((p) => ({ ...p, category: toCategory(p.category) }));
   const counts = new Map<string, number>();
   for (const p of rows) counts.set(p.category, (counts.get(p.category) ?? 0) + 1);
-  const active = searchParams.cat && (CATEGORIES as readonly string[]).includes(searchParams.cat) ? searchParams.cat : null;
-  const shown = active ? rows.filter((p) => p.category === active) : rows;
+  const chips = [...CATEGORIES.filter((c) => counts.has(c)), ...[...counts.keys()].filter((c) => !(CATEGORIES as readonly string[]).includes(c)).sort()];
+  const active = (searchParams.cat ?? '').trim().slice(0, 50) || null;
+  const shown = active ? rows.filter((p) => p.category.toLowerCase() === active.toLowerCase()) : rows;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -22,10 +23,9 @@ export default async function AdminProducts({ searchParams }: { searchParams: { 
         <Link href="/admin/products" className={`rounded-full border px-3 py-1 font-medium ${!active ? 'border-brand-600 bg-brand-600 text-white' : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand-500'}`}>
           Semua ({rows.length})
         </Link>
-        {CATEGORIES.map((c) => {
+        {chips.map((c) => {
           const n = counts.get(c) ?? 0;
-          if (!n) return null;
-          const on = active === c;
+          const on = active?.toLowerCase() === c.toLowerCase();
           return (
             <Link key={c} href={`/admin/products?cat=${encodeURIComponent(c)}`} className={`rounded-full border px-3 py-1 font-medium ${on ? 'border-brand-600 bg-brand-600 text-white' : 'border-zinc-300 bg-white text-zinc-700 hover:border-brand-500'}`}>
               {c} ({n})

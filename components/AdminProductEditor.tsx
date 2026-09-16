@@ -94,7 +94,7 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
         <div><label className="label">Catatan penting (kosongkan = default)</label><textarea name="notice" defaultValue={product.notice ?? ''} rows={3} className="input" placeholder={'Pastikan ukuran file sesuai…'} /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Status</label><select name="status" defaultValue={product.status} className="input"><option value="draft">draft</option><option value="published">published</option><option value="archived">archived</option></select></div>
-          <div><label className="label">Kategori</label><select name="category" defaultValue={product.category ?? 'Lainnya'} className="input">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+          <div><label className="label">Kategori (pilih atau ketik baru)</label><input name="category" defaultValue={product.category ?? 'Lainnya'} list="cat-list" maxLength={50} className="input" /><datalist id="cat-list">{CATEGORIES.map((c) => <option key={c} value={c} />)}</datalist></div>
         </div>
         <div className="flex items-end gap-2 pb-2"><input type="checkbox" name="featured" defaultChecked={product.featured ?? false} id="feat" /><label htmlFor="feat" className="text-sm">Featured</label></div>
         <button className="btn-primary">Save</button>
