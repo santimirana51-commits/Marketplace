@@ -4,9 +4,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const configuredGeminiModel = process.env.GEMINI_MODEL?.trim();
-const GEMINI_MODEL = configuredGeminiModel === 'gemini-1.5-flash'
-  ? 'gemini-2.5-flash'
-  : configuredGeminiModel || 'gemini-2.5-flash';
+const retiredGeminiModels = new Set(['gemini-1.5-flash', 'gemini-2.5-flash']);
+const GEMINI_MODEL = !configuredGeminiModel || retiredGeminiModels.has(configuredGeminiModel)
+  ? 'gemini-3-flash-preview'
+  : configuredGeminiModel;
 const OLLAMA_VISION_URL = process.env.OLLAMA_VISION_URL;
 const OLLAMA_VISION_MODEL = process.env.OLLAMA_VISION_MODEL || 'llava:7b';
 
