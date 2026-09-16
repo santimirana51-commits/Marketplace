@@ -1,6 +1,82 @@
 'use client';
 import { useState } from 'react';
-import { CONTENT_DEFAULTS } from '@/lib/content';
+import { CONTENT_DEFAULTS, parsePipedList, parseFaqList, type Step, type Feature, type Faq } from '@/lib/content';
+
+/** Live preview mirroring the homepage sections (simplified). */
+function Preview({ vals }: { vals: Record<string, string> }) {
+  const shown = (k: string) => {
+    const v = (vals[k] ?? '').trim();
+    return v || CONTENT_DEFAULTS[k] || '';
+  };
+  const steps = parsePipedList<Step>(shown('steps_text'), 'steps');
+  const feats = parsePipedList<Feature>(shown('features_text'), 'features');
+  const faqs = parseFaqList(shown('faqs_text'));
+  return (
+    <div className="overflow-hidden rounded-2xl border bg-white">
+      <p className="border-b bg-zinc-50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-500">Pratinjau live</p>
+      <div className="space-y-6 p-4">
+        <div className="text-center">
+          <p className="text-xl font-extrabold tracking-tight">
+            {shown('hero_title_a')}{' '}
+            <span className="bg-gradient-to-r from-brand-600 to-green-600 bg-clip-text text-transparent">{shown('hero_title_b')}</span>
+          </p>
+          <p className="mt-1 text-xs text-zinc-600">{shown('hero_sub')}</p>
+          <div className="mx-auto mt-3 flex max-w-xs items-center gap-2 rounded-full border px-3 py-1.5 text-xs text-zinc-400">
+            <span className="flex-1 text-left">{shown('hero_placeholder')}</span>
+            <span className="rounded-full bg-brand-600 px-2.5 py-1 font-bold text-white">Cari</span>
+          </div>
+        </div>
+        <div>
+          <p className="font-bold">{shown('sec_categories')}</p>
+          <p className="font-bold">{shown('sec_featured')}</p>
+          <p className="font-bold">{shown('sec_latest')}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-green-600">{shown('sec_how_kicker')}</p>
+          <p className="font-extrabold">{shown('sec_how_title')}</p>
+          <div className="mt-2 space-y-2">
+            {steps.map((s) => (
+              <div key={s.n} className="rounded-xl bg-zinc-950 p-3 text-white">
+                <p className="text-sm font-bold">{s.n}. {s.title}</p>
+                <p className="text-xs text-zinc-300">{s.text}</p>
+              </div>
+            ))}
+            {!steps.length ? <p className="text-xs text-red-500">Format salah — pakai “Judul | teks” per baris.</p> : null}
+          </div>
+        </div>
+        <div>
+          <p className="font-extrabold">{shown('sec_why')}</p>
+          <div className="mt-2 space-y-2">
+            {feats.map((f) => (
+              <div key={f.title} className="rounded-xl border p-3">
+                <p className="text-sm font-bold">{f.icon} {f.title}</p>
+                <p className="text-xs text-zinc-600">{f.text}</p>
+              </div>
+            ))}
+            {!feats.length ? <p className="text-xs text-red-500">Format salah — pakai “ikon | Judul | teks”.</p> : null}
+          </div>
+        </div>
+        <div>
+          <p className="font-extrabold">{shown('sec_faq')}</p>
+          <div className="mt-2 space-y-2">
+            {faqs.map((f) => (
+              <details key={f.q} className="rounded-xl border">
+                <summary className="cursor-pointer px-3 py-2 text-sm font-semibold">{f.q}</summary>
+                <p className="px-3 pb-3 text-xs text-zinc-600">{f.a}</p>
+              </details>
+            ))}
+            {!faqs.length ? <p className="text-xs text-red-500">Format salah — pakai “Pertanyaan ||| Jawaban”.</p> : null}
+          </div>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-r from-brand-700 to-green-700 p-4 text-white">
+          <p className="font-bold">{shown('cta_title')}</p>
+          <p className="text-xs text-white/80">{shown('cta_sub')}</p>
+          <p className="mt-2 inline-block rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-green-700">{shown('cta_btn')}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const GROUPS: { title: string; keys: { key: string; label: string; rows?: number }[] }[] = [
   {
@@ -76,7 +152,8 @@ export function LandingEditor({ initial }: { initial: Record<string, string> }) 
   }
 
   return (
-    <form onSubmit={save} className="mt-6 space-y-6">
+    <div className="mt-6 grid items-start gap-6 xl:grid-cols-2">
+    <form onSubmit={save} className="space-y-6">
       {GROUPS.map((g) => (
         <div key={g.title} className="card">
           <p className="font-bold">{g.title}</p>
@@ -99,5 +176,9 @@ export function LandingEditor({ initial }: { initial: Record<string, string> }) 
         {msg ? <span className="text-sm text-zinc-600">{msg}</span> : null}
       </div>
     </form>
+    <div className="xl:sticky xl:top-24">
+      <Preview vals={vals} />
+    </div>
+    </div>
   );
 }

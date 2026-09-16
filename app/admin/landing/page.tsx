@@ -10,7 +10,7 @@ export default async function AdminLanding() {
   const initial: Record<string, string> = {};
   for (const r of (data ?? []) as { key: string; value: string }[]) initial[r.key] = r.value ?? '';
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-6xl">
       <h1 className="text-3xl font-bold">Landing page</h1>
       <p className="mt-1 text-sm text-zinc-600">Ubah teks homepage. Kosongkan field untuk kembali ke bawaan. Perubahan tampil setelah refresh (tanpa deploy).</p>
       <LandingEditor initial={initial} />
