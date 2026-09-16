@@ -20,6 +20,7 @@ export default function WebsiteClonerPage() {
   const [robots, setRobots] = useState(true);
   const [sameDomain, setSameDomain] = useState(true);
   const [assets, setAssets] = useState(true);
+  const [downloadLinks, setDownloadLinks] = useState(true);
   const [batch, setBatch] = useState('');
   const [planReady, setPlanReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +63,7 @@ Delay: ${delay}s
 Respect robots.txt: ${robots}
 Same domain only: ${sameDomain}
 Include assets: ${assets}
+Clone download links: ${downloadLinks}
 Batch targets: ${batchCount}`;
       const aiResponse = await fetch('/api/admin/ai', {
         method: 'POST',
@@ -145,6 +147,7 @@ Batch targets: ${batchCount}`;
             <label className="flex items-center gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" checked={robots} onChange={(event) => setRobots(event.target.checked)} /> Hormati robots.txt</label>
             <label className="flex items-center gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" checked={sameDomain} onChange={(event) => setSameDomain(event.target.checked)} /> Batasi domain yang sama</label>
             <label className="flex items-center gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" checked={assets} onChange={(event) => setAssets(event.target.checked)} /> Sertakan asset</label>
+            <label className="flex items-center gap-2 rounded-lg border p-3 text-sm"><input type="checkbox" checked={downloadLinks} onChange={(event) => setDownloadLinks(event.target.checked)} /> Clone link download</label>
           </div>
 
           <div>
@@ -180,7 +183,7 @@ Batch targets: ${batchCount}`;
           <div><p className="text-xs font-bold uppercase tracking-widest text-green-700">Plan ready</p><h2 className="mt-1 text-xl font-bold text-green-900">{modeCopy[mode].label}</h2><p className="mt-1 text-sm text-green-800">{normalizedUrl.origin} · depth {depth} · delay {delay}s · {batchCount + 1} target</p></div>
           <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-green-700">Preview only</span>
         </div>
-        <pre className="mt-4 overflow-x-auto rounded-lg bg-zinc-950 p-4 text-xs leading-6 text-green-300">{`website-cloner ${mode} "${normalizedUrl.href}" --depth ${depth} --delay ${delay}${robots ? ' --robots' : ''}${sameDomain ? ' --same-domain' : ''}${assets ? ' --assets' : ''}`}</pre>
+        <pre className="mt-4 overflow-x-auto rounded-lg bg-zinc-950 p-4 text-xs leading-6 text-green-300">{`website-cloner ${mode} "${normalizedUrl.href}" --depth ${depth} --delay ${delay}${robots ? ' --robots' : ''}${sameDomain ? ' --same-domain' : ''}${assets ? ' --assets' : ''}${downloadLinks ? ' --download-links' : ''}`}</pre>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button type="button" className="btn-primary !bg-green-700 hover:!bg-green-800" onClick={implementAsDraft} disabled={implementing}>{implementing ? 'AI membuat draft...' : 'Implementasikan sebagai produk baru'}</button>
           <p className="text-xs text-green-800">AI membuat metadata draft; review di editor sebelum publish.</p>
