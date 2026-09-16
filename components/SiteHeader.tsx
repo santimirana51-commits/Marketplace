@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { NAV_CATS } from '@/lib/nav';
 
@@ -24,10 +25,7 @@ export function SiteHeader() {
       <div className="border-b bg-white">
         <div className="container-x flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
           <Link href="/" className="leading-none">
-            <span className="text-2xl font-extrabold tracking-tight">
-              Pixelbay<span className="text-brand-600">.</span>
-            </span>
-            <span className="mt-0.5 block text-[11px] font-medium text-zinc-500">Portal berbagi file</span>
+            <Image src="/Gambar Codex 16 Sep 2026, 20.31.47.png" alt="Pixelbay" width={150} height={48} className="h-12 w-auto object-contain object-left" priority />
           </Link>
           <form action="/products" method="get" className="order-3 flex w-full min-w-0 flex-1 gap-2 sm:order-2 sm:w-auto" role="search">
             <input name="q" type="search" placeholder="Cari template, desain, PDF, script…" className="input !py-2.5" aria-label="Cari file" />

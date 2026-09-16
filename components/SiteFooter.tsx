@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { NAV_CATS } from '@/lib/nav';
 
@@ -12,7 +13,7 @@ export function SiteFooter() {
     <footer className="mt-16 border-t bg-zinc-50">
       <div className="container-x grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="text-lg font-extrabold tracking-tight">Pixelbay<span className="text-brand-600">.</span></p>
+          <Image src="/Gambar Codex 16 Sep 2026, 20.31.47.png" alt="Pixelbay" width={150} height={48} className="h-12 w-auto object-contain object-left" />
           <p className="mt-2 text-sm text-zinc-600">Portal berbagi file gratis. Klik, unduh, tanpa daftar — ID Drive asli tidak pernah diekspos.</p>
         </div>
         <div className="text-sm">
