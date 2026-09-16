@@ -5,6 +5,7 @@ import { formatPrice, formatBytes } from '../lib/format';
 import { rateLimit } from '../lib/rate-limit';
 import { isAdminEmail } from '../lib/auth';
 import { mapAIResultToFormState } from '../components/AdminProductEditor';
+import { parseAIJson } from '../lib/ai-json';
 
 // Portal berbagi file: publik total, tanpa login/cart/checkout/payment.
 // Tests pin the portal security contracts so regressions fail fast.
@@ -213,6 +214,15 @@ describe('11c. AI product auto-fill mapping', () => {
     expect(map.notice).toBe('Pastikan file aman');
     expect(map.thumbnail_url).toBe('https://example.com/thumb.jpg');
     expect(map.featured).toBe(false);
+  });
+});
+
+describe('11c2. AI JSON response parsing', () => {
+  it('accepts plain, fenced, and explanatory JSON responses', () => {
+    expect(parseAIJson('{"title":"A"}')?.title).toBe('A');
+    expect(parseAIJson('```json\n{"title":"B"}\n```')?.title).toBe('B');
+    expect(parseAIJson('Here is the result:\n{"title":"C"}')?.title).toBe('C');
+    expect(parseAIJson('not json')).toBeNull();
   });
 });
 

@@ -1,5 +1,6 @@
 import { requireAdmin } from '@/lib/auth';
 import { errResponse } from '@/lib/validation';
+import { parseAIJson } from '@/lib/ai-json';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
@@ -48,7 +49,7 @@ async function analyzeWithOllamaVision(text: string, imageBase64: string): Promi
     
     if (!res.ok) return null;
     const data = await res.json();
-    return JSON.parse(data.response);
+    return parseAIJson(String(data.response ?? ''));
   } catch {
     return null;
   }
@@ -126,9 +127,8 @@ export async function POST(req: Request) {
       
       if (!resultText) return errResponse('AI returned empty response');
 
-      try {
-        parsed = JSON.parse(resultText);
-      } catch {
+      parsed = parseAIJson(resultText);
+      if (!parsed) {
         return errResponse('AI returned invalid JSON');
       }
     }
