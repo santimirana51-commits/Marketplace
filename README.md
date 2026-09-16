@@ -23,6 +23,7 @@ Jalankan di Supabase SQL editor (urut):
 4. `0004_provider.sql` — legacy era multi-gateway; tidak dibutuhkan portal, boleh dilewati.
 5. `0005_downloads.sql` — kolom `product_files.downloads` (counter unduhan per file).
 6. `0006_external.sql` — kolom `product_files.external_url` (sumber luar opsional).
+7. `0007_content.sql` — kolom `products.install_steps` + `notice` (teks "Langkah install" & "Penting" per produk, editable via admin; kosong = default).
 
 ## 3. Environment variables
 

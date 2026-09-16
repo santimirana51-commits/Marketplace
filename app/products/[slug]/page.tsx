@@ -30,11 +30,21 @@ function shortHost(url: string | null | undefined): string | null {
   }
 }
 
-const INSTALL_STEPS = [
+const DEFAULT_INSTALL_STEPS = [
   'Klik tombol unduh pada mirror pilihan di bawah. Tunggu hingga file tersimpan sempurna — jangan pause terlalu lama.',
   'Periksa ukuran file hasil unduhan dengan info di tabel. Bila berupa .rar ber-part, kumpulkan semua part dalam satu folder.',
   'Extract dengan WinRAR/7-Zip versi terbaru. Buka / jalankan file sesuai jenisnya.',
 ];
+
+const DEFAULT_NOTICE = [
+  'Pastikan ukuran file hasil unduhan sesuai/mirip info di atas.',
+  'File .rar ber-part harus lengkap semua part sebelum extract.',
+  'Matikan antivirus bila file diblokir saat install, nyalakan lagi setelahnya.',
+];
+
+function splitLines(text: string): string[] {
+  return text.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+}
 
 export default async function ProductDetail({ params }: { params: { slug: string } }) {
   const found = await getPublishedProduct(params.slug).catch(() => null);
@@ -42,7 +52,10 @@ export default async function ProductDetail({ params }: { params: { slug: string
   const p = found.product as {
     title: string; slug: string; description: string; short_description?: string | null;
     thumbnail_url?: string | null; created_at: string;
+    install_steps?: string | null; notice?: string | null;
   };
+  const steps = p.install_steps?.trim() ? splitLines(p.install_steps) : DEFAULT_INSTALL_STEPS;
+  const notice = p.notice?.trim() ? splitLines(p.notice) : DEFAULT_NOTICE;
   const files = (found.files ?? []) as F[];
   const totalSize = files.reduce((s, f) => s + (f.file_size ?? 0), 0);
   const formats = [...new Set(files.map((f) => f.google_drive_mime_type ?? (f.external_url ? 'link luar' : 'file')))];
@@ -95,7 +108,7 @@ export default async function ProductDetail({ params }: { params: { slug: string
       <div className="mt-8">
         <h2 className="text-2xl font-bold">Langkah install</h2>
         <ol className="mt-3 list-decimal space-y-2 pl-6 text-zinc-800">
-          {INSTALL_STEPS.map((s) => <li key={s.slice(0, 24)}>{s}</li>)}
+          {steps.map((s) => <li key={s.slice(0, 24)}>{s}</li>)}
         </ol>
       </div>
 
@@ -126,9 +139,7 @@ export default async function ProductDetail({ params }: { params: { slug: string
       <div className="card mt-6 border-amber-300 bg-amber-50">
         <p className="font-bold">⚠️ Penting</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700">
-          <li>Pastikan ukuran file hasil unduhan sesuai/mirip info di atas.</li>
-          <li>File .rar ber-part harus lengkap semua part sebelum extract.</li>
-          <li>Matikan antivirus bila file diblokir saat install, nyalakan lagi setelahnya.</li>
+          {notice.map((n) => <li key={n.slice(0, 24)}>{n}</li>)}
         </ul>
       </div>
 

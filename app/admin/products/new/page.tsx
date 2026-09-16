@@ -18,6 +18,8 @@ export default function NewProductPage() {
       description: String(fd.get('description') ?? ''),
       short_description: String(fd.get('short_description') ?? ''),
       thumbnail_url: String(fd.get('thumbnail_url') ?? '') || undefined,
+      install_steps: String(fd.get('install_steps') ?? ''),
+      notice: String(fd.get('notice') ?? ''),
       status: String(fd.get('status') ?? 'draft'),
       featured: fd.get('featured') === 'on',
     };
@@ -40,6 +42,8 @@ export default function NewProductPage() {
         <div><label className="label">Short description</label><input name="short_description" className="input" /></div>
         <div><label className="label">Description</label><textarea name="description" rows={5} className="input" /></div>
         <div><label className="label">Thumbnail URL</label><input name="thumbnail_url" className="input" placeholder="https://…" /></div>
+        <div><label className="label">Langkah install (satu per baris, opsional)</label><textarea name="install_steps" rows={4} className="input" /></div>
+        <div><label className="label">Catatan penting (opsional)</label><textarea name="notice" rows={3} className="input" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Status</label><select name="status" className="input"><option value="draft">draft</option><option value="published">published</option><option value="archived">archived</option></select></div>
           <div className="flex items-end gap-2 pb-2"><input type="checkbox" name="featured" id="f" /><label htmlFor="f" className="text-sm">Featured</label></div>

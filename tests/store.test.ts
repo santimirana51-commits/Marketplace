@@ -249,6 +249,32 @@ describe('11c. bulk attach', () => {
   });
 });
 
+describe('11d. editable install steps + notice', () => {
+  it('schema accepts optional install_steps/notice', async () => {
+    const { adminProductSchema } = await import('../lib/validation');
+    const r = adminProductSchema.safeParse({ title: 'T', slug: 't', install_steps: 'a\nb', notice: 'x' });
+    expect(r.success).toBe(true);
+    const d = adminProductSchema.safeParse({ title: 'T', slug: 't' });
+    if (d.success) {
+      expect(d.data.install_steps).toBe('');
+      expect(d.data.notice).toBe('');
+    }
+  });
+  it('detail renders custom text with defaults fallback', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('app/products/[slug]/page.tsx', 'utf8'));
+    expect(src).toMatch(/DEFAULT_INSTALL_STEPS/);
+    expect(src).toMatch(/DEFAULT_NOTICE/);
+    expect(src).toMatch(/install_steps\?\.trim/);
+  });
+  it('admin editor + new form expose the fields; API tolerates pre-0007 DB', async () => {
+    const fs = await import('node:fs/promises');
+    expect(await fs.readFile('components/AdminProductEditor.tsx', 'utf8')).toMatch(/install_steps/);
+    expect(await fs.readFile('app/admin/products/new/page.tsx', 'utf8')).toMatch(/install_steps/);
+    expect(await fs.readFile('app/api/admin/products/[id]/route.ts', 'utf8')).toMatch(/migrasi 0007/);
+    expect(await fs.readFile('supabase/migrations/0007_content.sql', 'utf8')).toMatch(/install_steps/);
+  });
+});
+
 describe('11. portal admin surface', () => {
   it('nav has Dashboard + Products only (no orders/customers)', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('components/AdminShell.tsx', 'utf8'));

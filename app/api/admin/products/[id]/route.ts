@@ -104,9 +104,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
   const parsed = adminProductSchema.partial().safeParse(body);
   if (!parsed.success) return errResponse('Invalid input');
-  const { data, error } = await adminClient().from('products').update(parsed.data).eq('id', params.id).select('*').single();
-  if (error) return errResponse(error.message, 400);
-  return Response.json({ product: data });
+  const adminDb = adminClient();
+  const attempt = await adminDb.from('products').update(parsed.data).eq('id', params.id).select('*').single();
+  if (!attempt.error) return Response.json({ product: attempt.data });
+  // Pre-0007 databases lack install_steps/notice — save the rest instead.
+  if (/install_steps|notice/.test(attempt.error.message ?? '')) {
+    const { install_steps: _a, notice: _b, ...legacy } = parsed.data as Record<string, unknown>;
+    const retry = await adminDb.from('products').update(legacy).eq('id', params.id).select('*').single();
+    if (!retry.error) {
+      return Response.json({ product: retry.data, warning: 'Kolom install/notice belum ada — jalankan migrasi 0007' });
+    }
+  }
+  return errResponse(attempt.error.message, 400);
 }
 
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
