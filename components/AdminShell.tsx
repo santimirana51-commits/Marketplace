@@ -3,71 +3,32 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
-const SECTIONS: { label: string; items: { label: string; href: string; icon: React.ReactNode }[] }[] = [
-  {
-    label: 'Overview',
-    items: [{ label: 'Dashboard', href: '/admin', icon: <IconGrid /> }],
-  },
-  {
-    label: 'Management',
-    items: [
-      { label: 'Products', href: '/admin/products', icon: <IconBox /> },
-      { label: 'Orders', href: '/admin/orders', icon: <IconCart /> },
-      { label: 'Customers', href: '/admin/customers', icon: <IconUsers /> },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { label: 'View store', href: '/', icon: <IconStore /> },
-      { label: 'My account', href: '/account', icon: <IconUser /> },
-    ],
-  },
+const NAV = [
+  { label: 'Dashboard', href: '/admin', icon: <IconGrid /> },
+  { label: 'Products', href: '/admin/products', icon: <IconBox /> },
+  { label: 'Orders', href: '/admin/orders', icon: <IconCart /> },
+  { label: 'Customers', href: '/admin/customers', icon: <IconUsers /> },
 ];
 
 function itemCls(active: boolean) {
-  return `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+  return `flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
     active ? 'bg-brand-600 text-white shadow-sm' : 'text-zinc-700 hover:bg-zinc-100'
   }`;
 }
 
-function SidebarBody({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
+function NavLinks({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
   return (
-    <div className="flex h-full flex-col">
-      <Link href="/admin" onClick={onNav} className="flex h-16 items-center gap-2 border-b px-5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 font-extrabold text-white">P</span>
-        <span className="leading-tight">
-          <span className="block font-extrabold tracking-tight">Pixelbay</span>
-          <span className="block text-[11px] font-medium text-zinc-500">Admin panel</span>
-        </span>
-      </Link>
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4" aria-label="Admin">
-        {SECTIONS.map((s) => (
-          <div key={s.label}>
-            <p className="px-3 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-400">{s.label}</p>
-            <ul className="space-y-0.5">
-              {s.items.map((it) => {
-                const active = it.href === '/admin' ? pathname === '/admin' : pathname.startsWith(it.href);
-                return (
-                  <li key={it.href + it.label}>
-                    <Link href={it.href} onClick={onNav} aria-current={active ? 'page' : undefined} className={itemCls(active)}>
-                      <span className="h-5 w-5 shrink-0">{it.icon}</span>
-                      {it.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </nav>
-      <div className="border-t p-3">
-        <Link href="/auth/signout" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
-          <span className="h-5 w-5 shrink-0"><IconOut /></span>
-          Sign out
-        </Link>
-      </div>
-    </div>
+    <>
+      {NAV.map((it) => {
+        const active = it.href === '/admin' ? pathname === '/admin' : pathname.startsWith(it.href);
+        return (
+          <Link key={it.href} href={it.href} onClick={onNav} aria-current={active ? 'page' : undefined} className={itemCls(active)}>
+            <span className="h-5 w-5 shrink-0">{it.icon}</span>
+            {it.label}
+          </Link>
+        );
+      })}
+    </>
   );
 }
 
@@ -75,34 +36,44 @@ export function AdminShell({ email, children }: { email?: string | null; childre
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   return (
-    <div className="min-h-[70vh] bg-zinc-50 lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen border-r bg-white lg:block">
-        <SidebarBody pathname={pathname} />
-      </aside>
-      {/* Mobile drawer */}
-      {open ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-72 bg-white shadow-xl">
-            <SidebarBody pathname={pathname} onNav={() => setOpen(false)} />
-          </aside>
-        </div>
-      ) : null}
-      <div className="min-w-0">
-        {/* Topbar */}
-        <div className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
-            <button className="btn-secondary !px-3 !py-2 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">☰</button>
-            <p className="truncate text-sm font-semibold text-zinc-800">Admin panel</p>
-            <div className="ml-auto flex items-center gap-3 text-sm">
-              <span className="hidden max-w-[220px] truncate text-zinc-500 sm:block" title={email ?? ''}>{email ?? ''}</span>
-              <Link href="/" className="btn-secondary !px-3 !py-1.5 text-xs">View store</Link>
-            </div>
+    <div className="min-h-[70vh] bg-zinc-50">
+      {/* Top bar */}
+      <div className="border-b bg-white">
+        <div className="container-x flex h-16 items-center gap-3">
+          <Link href="/admin" className="flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 font-extrabold text-white">P</span>
+            <span className="leading-tight">
+              <span className="block font-extrabold tracking-tight">Pixelbay</span>
+              <span className="block text-[11px] font-medium text-zinc-500">Admin panel</span>
+            </span>
+          </Link>
+          <div className="ml-auto flex items-center gap-3 text-sm">
+            <span className="hidden max-w-[220px] truncate text-zinc-500 md:block" title={email ?? ''}>{email ?? ''}</span>
+            <Link href="/" className="btn-secondary hidden !px-3 !py-1.5 text-xs sm:inline-flex">View store</Link>
+            <Link href="/auth/signout" className="hidden text-xs font-medium text-red-600 hover:underline sm:block">Sign out</Link>
+            <button className="btn-secondary !px-3 !py-2 lg:hidden" onClick={() => setOpen((v) => !v)} aria-label="Toggle menu" aria-expanded={open}>☰</button>
           </div>
         </div>
-        <main className="px-4 py-6 sm:px-6">{children}</main>
+        {/* Stacked nav row (desktop) */}
+        <nav className="hidden border-t lg:block" aria-label="Admin">
+          <div className="container-x flex gap-1 overflow-x-auto py-1.5">
+            <NavLinks pathname={pathname} />
+          </div>
+        </nav>
       </div>
+      {/* Stacked nav dropdown (mobile) */}
+      {open ? (
+        <nav className="border-b bg-white px-4 py-2 lg:hidden" aria-label="Admin">
+          <div className="grid gap-1">
+            <NavLinks pathname={pathname} onNav={() => setOpen(false)} />
+            <div className="flex gap-2 border-t pt-2">
+              <Link href="/" className="btn-secondary flex-1 !px-3 !py-1.5 text-xs">View store</Link>
+              <Link href="/auth/signout" className="flex-1 rounded-lg px-3 py-1.5 text-center text-xs font-medium text-red-600 hover:bg-red-50">Sign out</Link>
+            </div>
+          </div>
+        </nav>
+      ) : null}
+      <main className="container-x max-w-6xl px-4 py-6 sm:px-6">{children}</main>
     </div>
   );
 }
@@ -118,13 +89,4 @@ function IconCart() {
 }
 function IconUsers() {
   return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><circle cx="7" cy="7" r="3" /><path d="M2.5 16.5c.8-2.8 2.5-4 4.5-4s3.7 1.2 4.5 4" strokeLinecap="round" /><circle cx="14" cy="8" r="2.2" /><path d="M14.5 12.7c1.4.3 2.4 1.4 3 3.8" strokeLinecap="round" /></svg>);
-}
-function IconStore() {
-  return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M3 7.5 4.5 3h11L17 7.5M3 7.5h14M3 7.5V16.5h14V7.5M7.5 16.5v-4h5v4" strokeLinecap="round" strokeLinejoin="round" /></svg>);
-}
-function IconUser() {
-  return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><circle cx="10" cy="7" r="3.2" /><path d="M3.5 16.5c1-3 3.4-4.5 6.5-4.5s5.5 1.5 6.5 4.5" strokeLinecap="round" /></svg>);
-}
-function IconOut() {
-  return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M8 3.5H4.5v13H8M13 6.5l3.5 3.5-3.5 3.5M16 10H8" strokeLinecap="round" strokeLinejoin="round" /></svg>);
 }
