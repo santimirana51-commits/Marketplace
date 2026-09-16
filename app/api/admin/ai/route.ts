@@ -3,6 +3,7 @@ import { errResponse } from '@/lib/validation';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const OLLAMA_VISION_URL = process.env.OLLAMA_VISION_URL;
 const OLLAMA_VISION_MODEL = process.env.OLLAMA_VISION_MODEL || 'llava:7b';
 
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
       }
       
       const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: GEMINI_MODEL,
         generationConfig: {
           temperature: 0.3,
           maxOutputTokens: 2000,
