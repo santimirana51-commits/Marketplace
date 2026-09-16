@@ -6,6 +6,7 @@ import { useState } from 'react';
 const NAV = [
   { label: 'Dashboard', href: '/admin', icon: <IconGrid /> },
   { label: 'Products', href: '/admin/products', icon: <IconBox /> },
+  { label: 'Website Cloner', href: '/admin/cloner', icon: <IconGlobe /> },
   { label: 'Landing', href: '/admin/landing', icon: <IconText /> },
 ];
 
@@ -82,6 +83,9 @@ function IconGrid() {
 }
 function IconText() {
   return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M4 5.5h12M4 10h12M4 14.5h7" strokeLinecap="round" /></svg>);
+}
+function IconGlobe() {
+  return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><circle cx="10" cy="10" r="7" /><path d="M3 10h14M10 3c2 2 3 4.3 3 7s-1 5-3 7c-2-2-3-4.3-3-7s1-5 3-7Z" strokeLinecap="round" /></svg>);
 }
 function IconBox() {
   return (<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M10 2.5 16.5 6v8L10 17.5 3.5 14V6L10 2.5Z" strokeLinejoin="round" /><path d="M3.5 6 10 9.5 16.5 6M10 9.5v8" strokeLinejoin="round" /></svg>);
