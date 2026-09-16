@@ -25,8 +25,8 @@ export async function POST(req: Request) {
   const attempt = await admin.from('products').insert(parsed.data).select('*').single();
   if (!attempt.error) return Response.json({ product: attempt.data }, { status: 201 });
   // Pre-0007 databases lack install_steps/notice — create without them.
-  if (/install_steps|notice/.test(attempt.error.message ?? '')) {
-    const { install_steps: _a, notice: _b, ...legacy } = parsed.data as Record<string, unknown>;
+  if (/install_steps|notice|category/.test(attempt.error.message ?? '')) {
+    const { install_steps: _a, notice: _b, category: _c, ...legacy } = parsed.data as Record<string, unknown>;
     const retry = await admin.from('products').insert(legacy).select('*').single();
     if (!retry.error) {
       return Response.json({ product: retry.data, warning: 'Kolom install/notice belum ada — jalankan migrasi 0007' }, { status: 201 });

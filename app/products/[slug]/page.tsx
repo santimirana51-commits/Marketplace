@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { getPublishedProduct, listPublishedProducts } from '@/lib/products';
+import { toCategory } from '@/lib/categories';
 import { formatBytes } from '@/lib/format';
 import { ProductCard } from '@/components/ProductCard';
 
@@ -52,17 +53,21 @@ export default async function ProductDetail({ params }: { params: { slug: string
   const p = found.product as {
     title: string; slug: string; description: string; short_description?: string | null;
     thumbnail_url?: string | null; created_at: string;
-    install_steps?: string | null; notice?: string | null;
+    install_steps?: string | null; notice?: string | null; category?: string | null;
   };
+  const category = toCategory(p.category);
   const steps = p.install_steps?.trim() ? splitLines(p.install_steps) : DEFAULT_INSTALL_STEPS;
   const notice = p.notice?.trim() ? splitLines(p.notice) : DEFAULT_NOTICE;
   const files = (found.files ?? []) as F[];
   const totalSize = files.reduce((s, f) => s + (f.file_size ?? 0), 0);
   const formats = [...new Set(files.map((f) => f.google_drive_mime_type ?? (f.external_url ? 'link luar' : 'file')))];
   const totalDownloads = files.reduce((s, f) => s + (f.downloads ?? 0), 0);
-  const related = (((await listPublishedProducts(4).catch(() => [])) as { slug: string }[]))
-    .filter((r) => r.slug !== p.slug)
-    .slice(0, 3);
+  const pool = (((await listPublishedProducts(12).catch(() => [])) as { slug: string; category?: string | null }[]))
+    .filter((r) => r.slug !== p.slug);
+  const related = [
+    ...pool.filter((r) => toCategory(r.category) === category),
+    ...pool.filter((r) => toCategory(r.category) !== category),
+  ].slice(0, 3);
   const date = new Date(p.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   const jsonLd = {
     '@context': 'https://schema.org', '@type': 'Product',
@@ -77,7 +82,7 @@ export default async function ProductDetail({ params }: { params: { slug: string
       <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">{p.title}</h1>
       <p className="mt-2 text-sm text-zinc-500">
         {date} · oleh <span className="font-semibold text-zinc-700">Pixelbay</span> · dalam{' '}
-        <Link href="/products" className="text-brand-700 hover:underline">Download</Link>
+        <Link href={`/products?cat=${encodeURIComponent(category)}`} className="text-brand-700 hover:underline">{category}</Link>
       </p>
 
       {/* Cover */}

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CATEGORIES, DEFAULT_CATEGORY } from '@/lib/categories';
 
 export const checkoutSchema = z.object({
   items: z
@@ -19,6 +20,7 @@ export const adminProductSchema = z.object({
   short_description: z.string().max(500).default(''),
   install_steps: z.string().max(5000).default(''),
   notice: z.string().max(2000).default(''),
+  category: z.enum(CATEGORIES).default(DEFAULT_CATEGORY),
   // Portal mode: everything is free; price kept only for the legacy column.
   price: z.number().min(0).max(1000000).default(0),
   currency: z.string().length(3).default('USD'),

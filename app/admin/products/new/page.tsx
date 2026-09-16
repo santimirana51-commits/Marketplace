@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CATEGORIES } from '@/lib/categories';
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function NewProductPage() {
       thumbnail_url: String(fd.get('thumbnail_url') ?? '') || undefined,
       install_steps: String(fd.get('install_steps') ?? ''),
       notice: String(fd.get('notice') ?? ''),
+      category: String(fd.get('category') ?? 'Lainnya'),
       status: String(fd.get('status') ?? 'draft'),
       featured: fd.get('featured') === 'on',
     };
@@ -46,8 +48,9 @@ export default function NewProductPage() {
         <div><label className="label">Catatan penting (opsional)</label><textarea name="notice" rows={3} className="input" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Status</label><select name="status" className="input"><option value="draft">draft</option><option value="published">published</option><option value="archived">archived</option></select></div>
-          <div className="flex items-end gap-2 pb-2"><input type="checkbox" name="featured" id="f" /><label htmlFor="f" className="text-sm">Featured</label></div>
+          <div><label className="label">Kategori</label><select name="category" className="input" defaultValue="Lainnya">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
         </div>
+        <div className="flex items-end gap-2 pb-2"><input type="checkbox" name="featured" id="f" /><label htmlFor="f" className="text-sm">Featured</label></div>
         <button className="btn-primary w-full" disabled={loading}>{loading ? 'Saving…' : 'Create'}</button>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </form>

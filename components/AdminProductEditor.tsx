@@ -2,10 +2,11 @@
 import { useState } from 'react';
 import { formatBytes } from '@/lib/format';
 import { parseBulkLines, MAX_BULK_FILES } from '@/lib/validation';
+import { CATEGORIES } from '@/lib/categories';
 
 type FileRow = { id: string; name: string; google_drive_file_id: string; google_drive_mime_type?: string | null; file_size?: number | null; external_url?: string | null };
 
-type Product = { id: string; title: string; short_description?: string | null; description?: string | null; price: number | string; currency: string; thumbnail_url?: string | null; status: string; featured?: boolean | null; install_steps?: string | null; notice?: string | null };
+type Product = { id: string; title: string; short_description?: string | null; description?: string | null; price: number | string; currency: string; thumbnail_url?: string | null; status: string; featured?: boolean | null; install_steps?: string | null; notice?: string | null; category?: string | null };
 
 export function AdminProductEditor({ product, files: initial }: { product: Product; files: FileRow[] }) {
   const [files, setFiles] = useState<FileRow[]>(initial);
@@ -32,6 +33,7 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
         short_description: String(fd.get('short_description') ?? ''),
         install_steps: String(fd.get('install_steps') ?? ''),
         notice: String(fd.get('notice') ?? ''),
+        category: String(fd.get('category') ?? 'Lainnya'),
         thumbnail_url: String(fd.get('thumbnail_url') ?? '') || null,
         status: String(fd.get('status')), featured: fd.get('featured') === 'on',
       });
@@ -92,8 +94,9 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
         <div><label className="label">Catatan penting (kosongkan = default)</label><textarea name="notice" defaultValue={product.notice ?? ''} rows={3} className="input" placeholder={'Pastikan ukuran file sesuai…'} /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Status</label><select name="status" defaultValue={product.status} className="input"><option value="draft">draft</option><option value="published">published</option><option value="archived">archived</option></select></div>
-          <div className="flex items-end gap-2 pb-2"><input type="checkbox" name="featured" defaultChecked={product.featured ?? false} id="feat" /><label htmlFor="feat" className="text-sm">Featured</label></div>
+          <div><label className="label">Kategori</label><select name="category" defaultValue={product.category ?? 'Lainnya'} className="input">{CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
         </div>
+        <div className="flex items-end gap-2 pb-2"><input type="checkbox" name="featured" defaultChecked={product.featured ?? false} id="feat" /><label htmlFor="feat" className="text-sm">Featured</label></div>
         <button className="btn-primary">Save</button>
       </form>
 

@@ -6,15 +6,26 @@ import { adminClient } from '@/lib/supabase/admin';
  * ids). Only safe columns (name/mime/size, never drive ids) are returned.
  * Callers are Server Components / Route Handlers — never client components.
  */
+const PRODUCT_LIST_COLS = 'title,slug,short_description,price,currency,thumbnail_url,featured,created_at,category';
+const PRODUCT_LIST_COLS_LEGACY = 'title,slug,short_description,price,currency,thumbnail_url,featured,created_at';
+
 export async function listPublishedProducts(limit = 24) {
   const supabase = adminClient();
-  const { data } = await supabase
+  const first = await supabase
     .from('products')
-    .select('title,slug,short_description,price,currency,thumbnail_url,featured,created_at')
+    .select(PRODUCT_LIST_COLS)
     .eq('status', 'published')
     .order('created_at', { ascending: false })
     .limit(limit);
-  return data ?? [];
+  if (!first.error) return first.data ?? [];
+  // Pre-0008 databases lack the category column.
+  const retry = await supabase
+    .from('products')
+    .select(PRODUCT_LIST_COLS_LEGACY)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return (retry.data ?? []).map((p) => ({ ...(p as object), category: 'Lainnya' }));
 }
 
 export async function getPublishedProduct(slug: string) {

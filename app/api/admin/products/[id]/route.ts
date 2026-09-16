@@ -108,8 +108,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const attempt = await adminDb.from('products').update(parsed.data).eq('id', params.id).select('*').single();
   if (!attempt.error) return Response.json({ product: attempt.data });
   // Pre-0007 databases lack install_steps/notice — save the rest instead.
-  if (/install_steps|notice/.test(attempt.error.message ?? '')) {
-    const { install_steps: _a, notice: _b, ...legacy } = parsed.data as Record<string, unknown>;
+  if (/install_steps|notice|category/.test(attempt.error.message ?? '')) {
+    const { install_steps: _a, notice: _b, category: _c, ...legacy } = parsed.data as Record<string, unknown>;
     const retry = await adminDb.from('products').update(legacy).eq('id', params.id).select('*').single();
     if (!retry.error) {
       return Response.json({ product: retry.data, warning: 'Kolom install/notice belum ada — jalankan migrasi 0007' });

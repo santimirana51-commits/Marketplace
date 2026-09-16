@@ -2,31 +2,39 @@ import Link from 'next/link';
 import { listPublishedProducts } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
 import { NAV_CATS } from '@/lib/nav';
+import { CATEGORIES, toCategory } from '@/lib/categories';
 
 export const metadata = { title: 'Semua File' };
 
 type P = {
   title: string; slug: string; short_description?: string | null;
   description?: string | null; thumbnail_url?: string | null;
+  category?: string | null;
 };
 
-export default async function ProductsPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function ProductsPage({ searchParams }: { searchParams: { q?: string; cat?: string } }) {
   const q = (searchParams.q ?? '').trim();
-  const all = ((await listPublishedProducts(60).catch(() => [])) as P[]);
+  const cat = (CATEGORIES as readonly string[]).includes(searchParams.cat ?? '')
+    ? (searchParams.cat as string)
+    : null;
+  const all = (((await listPublishedProducts(100).catch(() => [])) as P[]))
+    .map((p) => ({ ...p, category: toCategory(p.category) }));
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-  const products = words.length
-    ? all.filter((p) => {
-        const hay = `${p.title} ${p.short_description ?? ''} ${p.description ?? ''}`.toLowerCase();
-        return words.every((w) => hay.includes(w));
-      })
-    : all;
+  const products = all.filter((p) => {
+    if (cat && p.category !== cat) return false;
+    if (!words.length) return true;
+    const hay = `${p.title} ${p.short_description ?? ''} ${p.description ?? ''}`.toLowerCase();
+    return words.every((w) => hay.includes(w));
+  });
 
   return (
     <div className="container-x py-10">
-      <h1 className="text-3xl font-bold">{q ? `Hasil untuk “${q}”` : 'Semua file'}</h1>
+      <h1 className="text-3xl font-bold">
+        {cat ?? (q ? `Hasil untuk “${q}”` : 'Semua file')}
+      </h1>
       <p className="mt-1 text-sm text-zinc-600">
         {products.length} file
-        {q ? <> · <Link href="/products" className="underline">Hapus pencarian</Link></> : null}
+        {q || cat ? <> · <Link href="/products" className="underline">Hapus filter</Link></> : null}
       </p>
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
         {NAV_CATS.map((c) => (
@@ -45,7 +53,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: { q
         </div>
       ) : (
         <div className="card mt-6 max-w-xl">
-          <p className="font-semibold">Tidak ada hasil{q ? <> untuk “{q}”</> : null}.</p>
+          <p className="font-semibold">Tidak ada hasil{q ? <> untuk “{q}”</> : null}{cat ? <> di kategori {cat}</> : null}.</p>
           <p className="mt-1 text-sm text-zinc-600">Coba kata kunci lain, atau jelajahi semuanya.</p>
           <Link href="/products" className="btn-secondary mt-4">Lihat semua file</Link>
         </div>

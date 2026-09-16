@@ -275,6 +275,43 @@ describe('11d. editable install steps + notice', () => {
   });
 });
 
+describe('11e. categories', () => {
+  it('normalizes to canonical labels, defaults Lainnya', async () => {
+    const { toCategory, CATEGORIES, DEFAULT_CATEGORY } = await import('../lib/categories');
+    expect(CATEGORIES).toContain('Game');
+    expect(DEFAULT_CATEGORY).toBe('Lainnya');
+    expect(toCategory('game')).toBe('Game');
+    expect(toCategory('  PDF & Dokumen ')).toBe('PDF & Dokumen');
+    expect(toCategory(null)).toBe('Lainnya');
+    expect(toCategory('ngawur')).toBe('Lainnya');
+  });
+  it('validation accepts canonical, rejects other', async () => {
+    const { adminProductSchema } = await import('../lib/validation');
+    expect(adminProductSchema.safeParse({ title: 'T', slug: 't', category: 'Game' }).success).toBe(true);
+    expect(adminProductSchema.safeParse({ title: 'T', slug: 't', category: 'Ngawur' }).success).toBe(false);
+  });
+  it('admin list filters + shows category; forms offer select', async () => {
+    const fs = await import('node:fs/promises');
+    expect(await fs.readFile('app/admin/products/page.tsx', 'utf8')).toMatch(/\?cat=/);
+    expect(await fs.readFile('components/AdminProductEditor.tsx', 'utf8')).toMatch(/name="category"/);
+    expect(await fs.readFile('app/admin/products/new/page.tsx', 'utf8')).toMatch(/name="category"/);
+  });
+  it('storefront filters by cat, tiles link cat, detail prioritizes same category', async () => {
+    const fs = await import('node:fs/promises');
+    const list = await fs.readFile('app/products/page.tsx', 'utf8');
+    expect(list).toMatch(/searchParams.*cat|cat.*searchParams/);
+    expect(list).toMatch(/p\.category !== cat/);
+    expect(await fs.readFile('app/page.tsx', 'utf8')).toMatch(/products\?cat=/);
+    const detail = await fs.readFile('app/products/[slug]/page.tsx', 'utf8');
+    expect(detail).toMatch(/toCategory/);
+  });
+  it('migration 0008 adds category with default', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('supabase/migrations/0008_category.sql', 'utf8'));
+    expect(src).toMatch(/category/);
+    expect(src).toMatch(/Lainnya/);
+  });
+});
+
 describe('11. portal admin surface', () => {
   it('nav has Dashboard + Products only (no orders/customers)', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('components/AdminShell.tsx', 'utf8'));

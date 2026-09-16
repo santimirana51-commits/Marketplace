@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { listPublishedProducts } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
 import { NAV_CATS } from '@/lib/nav';
+import { toCategory } from '@/lib/categories';
 
 type P = {
   title: string; slug: string; short_description?: string | null;
   thumbnail_url?: string | null; featured?: boolean | null;
+  category?: string | null;
 };
 
 export const metadata = {
@@ -14,10 +16,12 @@ export const metadata = {
 };
 
 const TILES = [
-  { label: 'Template', q: 'template', icon: '🎨', blurb: 'Layout & kit siap pakai' },
-  { label: 'Desain', q: 'design', icon: '🖌️', blurb: 'Grafis & aset kreatif' },
-  { label: 'PDF & Dokumen', q: 'pdf', icon: '📄', blurb: 'Panduan, ebook & dokumen' },
-  { label: 'Script & Kode', q: 'script', icon: '💻', blurb: 'Snippet, tools & otomasi' },
+  { label: 'Template', cat: 'Template', icon: '🎨', blurb: 'Layout & kit siap pakai' },
+  { label: 'Desain', cat: 'Desain', icon: '🖌️', blurb: 'Grafis & aset kreatif' },
+  { label: 'PDF & Dokumen', cat: 'PDF & Dokumen', icon: '📄', blurb: 'Panduan, ebook & dokumen' },
+  { label: 'Script & Kode', cat: 'Script & Kode', icon: '💻', blurb: 'Snippet, tools & otomasi' },
+  { label: 'Game', cat: 'Game', icon: '🎮', blurb: 'Game & repack' },
+  { label: 'Software', cat: 'Software', icon: '💿', blurb: 'Aplikasi & tools' },
 ];
 
 const STEPS = [
@@ -40,9 +44,8 @@ const FAQS = [
   { q: 'File rusak / link mati?', a: 'Laporkan judul produknya lewat halaman kontak admin — file akan diperbaiki.' },
 ];
 
-function countFor(products: P[], q: string) {
-  const w = q.toLowerCase();
-  return products.filter((p) => `${p.title} ${p.short_description ?? ''}`.toLowerCase().includes(w)).length;
+function countFor(products: P[], cat: string) {
+  return products.filter((p) => toCategory(p.category) === cat).length;
 }
 
 export default async function Home() {
@@ -91,13 +94,13 @@ export default async function Home() {
           <h2 className="text-2xl font-bold">Mulai dari kategori</h2>
           <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">Lihat semua →</Link>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {TILES.map((t) => (
-            <Link key={t.label} href={`/products?q=${t.q}`} className="card group !p-5 transition hover:-translate-y-0.5 hover:border-brand-500 hover:shadow-md">
+            <Link key={t.label} href={`/products?cat=${encodeURIComponent(t.cat)}`} className="card group !p-5 transition hover:-translate-y-0.5 hover:border-brand-500 hover:shadow-md">
               <p className="text-3xl">{t.icon}</p>
               <p className="mt-3 font-bold group-hover:text-brand-700">{t.label}</p>
               <p className="text-xs text-zinc-500">{t.blurb}</p>
-              <p className="mt-2 text-xs font-semibold text-zinc-400">{countFor(products, t.q)} produk →</p>
+              <p className="mt-2 text-xs font-semibold text-zinc-400">{countFor(products, t.cat)} produk →</p>
             </Link>
           ))}
         </div>
