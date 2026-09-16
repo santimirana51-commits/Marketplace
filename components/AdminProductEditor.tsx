@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { formatBytes } from '@/lib/format';
 
-type FileRow = { id: string; name: string; google_drive_file_id: string; google_drive_mime_type?: string | null; file_size?: number | null };
+type FileRow = { id: string; name: string; google_drive_file_id: string; google_drive_mime_type?: string | null; file_size?: number | null; external_url?: string | null };
 
 type Product = { id: string; title: string; short_description?: string | null; description?: string | null; price: number | string; currency: string; thumbnail_url?: string | null; status: string; featured?: boolean | null };
 
@@ -11,6 +11,7 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
   const [msg, setMsg] = useState<string | null>(null);
   const [driveName, setDriveName] = useState('');
   const [driveId, setDriveId] = useState('');
+  const [extUrl, setExtUrl] = useState('');
 
   async function patch(payload: object) {
     const res = await fetch(`/api/admin/products/${product.id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
@@ -37,10 +38,10 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
   async function addFile() {
     setMsg(null);
     try {
-      const data = await patch({ action: 'addFile', name: driveName, google_drive_file_id: driveId });
+      const data = await patch({ action: 'addFile', name: driveName, google_drive_file_id: driveId, external_url: extUrl });
       setFiles((f) => [...f, data.file]);
-      setDriveName(''); setDriveId('');
-      setMsg('File validated against Drive and attached.');
+      setDriveName(''); setDriveId(''); setExtUrl('');
+      setMsg(driveId ? 'File validated against Drive and attached.' : 'External link attached.');
     } catch (e) { setMsg(e instanceof Error ? e.message : 'Failed'); }
   }
 
@@ -75,15 +76,18 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
         <ul className="mt-3 space-y-2 text-sm">
           {files.map((f) => (
             <li key={f.id} className="flex items-center justify-between gap-3">
-              <span>{f.name} <span className="text-zinc-400">· {f.google_drive_mime_type ?? ''} · {formatBytes(f.file_size)}</span></span>
+              <span>{f.external_url ? '↗ ' : ''}{f.name} <span className="text-zinc-400">· {f.external_url ? 'link luar' : `${f.google_drive_mime_type ?? ''} · ${formatBytes(f.file_size)}`}</span></span>
               <button className="text-xs text-red-600 underline" onClick={() => removeFile(f.id)}>Remove</button>
             </li>
           ))}
         </ul>
         <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
           <input className="input" placeholder="Display name" value={driveName} onChange={(e) => setDriveName(e.target.value)} />
-          <input className="input" placeholder="Drive file ID" value={driveId} onChange={(e) => setDriveId(e.target.value)} />
+          <input className="input" placeholder="Drive file ID / link" value={driveId} onChange={(e) => setDriveId(e.target.value)} />
           <button type="button" className="btn-secondary" onClick={addFile}>Attach</button>
+        </div>
+        <div className="mt-2 flex gap-2">
+          <input className="input" placeholder="…atau URL luar (https://…)" value={extUrl} onChange={(e) => setExtUrl(e.target.value)} />
         </div>
       </div>
 

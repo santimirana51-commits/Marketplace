@@ -1,6 +1,6 @@
 import { requireAdmin } from '@/lib/auth';
 import { adminClient } from '@/lib/supabase/admin';
-import { adminFileSchema, adminProductSchema, errResponse } from '@/lib/validation';
+import { adminFileSchema, adminProductSchema, errResponse, isSafeExternalUrl } from '@/lib/validation';
 import { validateDriveFile, extractDriveFileId, isDriveConfigured } from '@/lib/google-drive';
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -13,17 +13,30 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   // File attach/remove actions
   if (body && typeof body === 'object' && 'action' in (body as object)) {
     const admin = adminClient();
-    const b = body as { action: string; fileId?: string; name?: string; google_drive_file_id?: string };
+    const b = body as { action: string; fileId?: string; name?: string; google_drive_file_id?: string; external_url?: string };
     if (b.action === 'addFile') {
       const driveId = extractDriveFileId(String(b.google_drive_file_id ?? ''));
-      const parsed = adminFileSchema.safeParse({ name: b.name, google_drive_file_id: driveId });
-      if (!parsed.success) return errResponse('Invalid file input');
+      const url = String(b.external_url ?? '').trim();
+      const parsed = adminFileSchema.safeParse({ name: b.name, google_drive_file_id: driveId, external_url: url });
+      if (!parsed.success) return errResponse(parsed.error.errors[0]?.message ?? 'Invalid file input');
+      // External source: no Drive involved at all.
+      if (!driveId && url) {
+        if (!isSafeExternalUrl(url)) return errResponse('URL luar tidak aman (hanya http/https publik)', 400);
+        const { data, error } = await admin.from('product_files').insert({
+          product_id: params.id, name: parsed.data.name || url,
+          google_drive_file_id: '', google_drive_mime_type: null, file_size: null,
+          external_url: url,
+        }).select('*').single();
+        if (error) return errResponse(error.message, 400);
+        return Response.json({ file: data }, { status: 201 });
+      }
       try {
         const meta = await validateDriveFile(parsed.data.google_drive_file_id);
         const { data, error } = await admin.from('product_files').insert({
           product_id: params.id, name: parsed.data.name || meta.name,
           google_drive_file_id: parsed.data.google_drive_file_id,
           google_drive_mime_type: meta.mimeType, file_size: meta.size ?? null,
+          external_url: url || null,
         }).select('*').single();
         if (error) return errResponse(error.message, 400);
         return Response.json({ file: data }, { status: 201 });

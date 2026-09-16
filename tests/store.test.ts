@@ -188,6 +188,38 @@ describe('10. no shop/payment code remains', () => {
   });
 });
 
+describe('11b. external source links', () => {
+  it('accepts public http(s), rejects dangerous/private targets', async () => {
+    const { isSafeExternalUrl } = await import('../lib/validation');
+    expect(isSafeExternalUrl('https://example.com/file.zip')).toBe(true);
+    expect(isSafeExternalUrl('http://cdn.example.org/a/b.pdf')).toBe(true);
+    expect(isSafeExternalUrl('javascript:alert(1)')).toBe(false);
+    expect(isSafeExternalUrl('data:text/html,hi')).toBe(false);
+    expect(isSafeExternalUrl('https://localhost/x.zip')).toBe(false);
+    expect(isSafeExternalUrl('http://127.0.0.1/f.zip')).toBe(false);
+    expect(isSafeExternalUrl('http://192.168.1.5/f.zip')).toBe(false);
+    expect(isSafeExternalUrl('http://10.0.0.5/f.zip')).toBe(false);
+    expect(isSafeExternalUrl('http://169.254.169.254/x')).toBe(false);
+    expect(isSafeExternalUrl('not a url')).toBe(false);
+    expect(isSafeExternalUrl('')).toBe(false);
+  });
+  it('admin attach accepts external-only (no drive id needed)', async () => {
+    const { adminFileSchema } = await import('../lib/validation');
+    expect(adminFileSchema.safeParse({ external_url: 'https://example.com/f.zip' }).success).toBe(true);
+    expect(adminFileSchema.safeParse({}).success).toBe(false);
+  });
+  it('download route redirects external + validates server-side', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('app/api/files/[id]/download/route.ts', 'utf8'));
+    expect(src).toMatch(/isSafeExternalUrl/);
+    expect(src).toMatch(/Response\.redirect/);
+    expect(src).toMatch(/302/);
+  });
+  it('migration 0006 adds external_url', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('supabase/migrations/0006_external.sql', 'utf8'));
+    expect(src).toMatch(/external_url/);
+  });
+});
+
 describe('11. portal admin surface', () => {
   it('nav has Dashboard + Products only (no orders/customers)', async () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('components/AdminShell.tsx', 'utf8'));

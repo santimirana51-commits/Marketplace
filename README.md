@@ -22,6 +22,7 @@ Jalankan di Supabase SQL editor (urut):
 3. `0003_hardening.sql` — cabut public SELECT `product_files` (ID Drive tak terekspos).
 4. `0004_provider.sql` — legacy era multi-gateway; tidak dibutuhkan portal, boleh dilewati.
 5. `0005_downloads.sql` — kolom `product_files.downloads` (counter unduhan per file).
+6. `0006_external.sql` — kolom `product_files.external_url` (sumber luar opsional).
 
 ## 3. Environment variables
 
@@ -29,7 +30,11 @@ Lihat `.env.example`. Wajib: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_A
 
 ## 4. Alur download publik
 
-`GET /api/files/[id]/download` → rate-limit per IP (30/mnt) → id harus resolve via DB ke file milik produk **published** (ID Drive arbitrer ditolak) → stream dari Drive (tanpa redirect, header attachment + no-store + nosniff) → counter +1 (toleran bila kolom belum ada).
+`GET /api/files/[id]/download` → rate-limit per IP (30/mnt) → id harus resolve via DB ke file milik produk **published** (ID Drive arbitrer ditolak) → bila file punya `external_url` valid → counter +1 lalu **302** ke sumber (tanpa proxy) → bila Drive → stream (tanpa redirect, header attachment + no-store + nosniff) → counter +1 (toleran bila kolom belum ada).
+
+## 4b. Link luar per file
+
+Tiap file boleh menunjuk URL sumber luar (MediaFire, Drive orang, server sendiri) selain/instead Drive sendiri. Admin isi kolom URL luar di editor (ID Drive boleh kosong). Server memvalidasi: hanya `http(s)` publik — tolak `javascript:`/`data:`, localhost, IP privat, dan metadata cloud. Hanya tautkan file yang berhak dibagikan (risiko DMCA ada pada pemilik link).
 
 ## 5. Google Drive configuration
 

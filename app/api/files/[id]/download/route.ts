@@ -1,5 +1,6 @@
 import { adminClient } from '@/lib/supabase/admin';
 import { downloadDriveFileStream } from '@/lib/google-drive';
+import { isSafeExternalUrl } from '@/lib/validation';
 import { log } from '@/lib/logger';
 import { rateLimit, clientIp } from '@/lib/rate-limit';
 
@@ -22,23 +23,41 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const admin = adminClient();
   const first = await admin
     .from('product_files')
-    .select('id,name,google_drive_file_id,google_drive_mime_type,downloads,products!inner(status)')
+    .select('id,name,google_drive_file_id,google_drive_mime_type,downloads,external_url,products!inner(status)')
     .eq('id', id)
     .maybeSingle();
-  // Pre-0005 databases lack the downloads column — retry without it.
+  // Pre-0005/0006 databases lack the new columns — retry without them.
   const file = first.data ?? (await admin
     .from('product_files')
-    .select('id,name,google_drive_file_id,google_drive_mime_type,products!inner(status)')
+    .select('id,name,google_drive_mime_type,file_size,products!inner(status)')
     .eq('id', id)
     .maybeSingle()).data;
   if (!file) return Response.json({ error: 'File tidak ditemukan' }, { status: 404 });
   const f = file as {
-    id: string; name: string; google_drive_file_id: string;
+    id: string; name: string; google_drive_file_id?: string | null;
     google_drive_mime_type?: string | null; downloads?: number | null;
+    external_url?: string | null;
     products: { status: string } | { status: string }[];
   };
   const status = Array.isArray(f.products) ? f.products[0]?.status : f.products?.status;
   if (status !== 'published') return Response.json({ error: 'File tidak ditemukan' }, { status: 404 });
+
+  // External source: count the click, then hand off (never proxy).
+  if (f.external_url && isSafeExternalUrl(f.external_url)) {
+    await admin
+      .from('product_files')
+      .update({ downloads: (f.downloads ?? 0) + 1 })
+      .eq('id', f.id)
+      .then(
+        () => {},
+        () => log('download.counter_failed', {}),
+      );
+    return Response.redirect(f.external_url.trim(), 302);
+  }
+
+  if (!f.google_drive_file_id) {
+    return Response.json({ error: 'File tidak ditemukan' }, { status: 404 });
+  }
 
   let stream: ReadableStream<Uint8Array>;
   let filename = f.name;

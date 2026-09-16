@@ -23,7 +23,7 @@ export default async function ProductDetail({ params }: { params: { slug: string
     title: string; slug: string; description: string;
     thumbnail_url?: string | null;
   };
-  const files = found.files as { id: string; name: string; google_drive_mime_type?: string | null; file_size?: number | null; downloads?: number | null }[];
+  const files = found.files as { id: string; name: string; google_drive_mime_type?: string | null; file_size?: number | null; downloads?: number | null; external_url?: string | null }[];
   const related = (((await listPublishedProducts(4).catch(() => [])) as { slug: string }[]))
     .filter((r) => r.slug !== p.slug)
     .slice(0, 3);
@@ -64,7 +64,7 @@ export default async function ProductDetail({ params }: { params: { slug: string
                 <li key={f.id} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-3 py-2">
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{f.name}</span>
-                    <span className="text-xs text-zinc-500">{f.google_drive_mime_type ?? 'file'} · {formatBytes(f.file_size)}{typeof f.downloads === 'number' ? ` · ⬇ ${f.downloads}×` : null}</span>
+                    <span className="text-xs text-zinc-500">{f.external_url ? '↗ link luar' : (f.google_drive_mime_type ?? 'file')} · {formatBytes(f.file_size)}{typeof f.downloads === 'number' ? ` · ⬇ ${f.downloads}×` : null}</span>
                   </span>
                   <a href={`/api/files/${f.id}/download`} className="btn-download shrink-0 !px-3 !py-1.5 text-xs">⬇ Unduh</a>
                 </li>
