@@ -4,6 +4,7 @@ import { adminProductSchema, adminFileSchema } from '../lib/validation';
 import { formatPrice, formatBytes } from '../lib/format';
 import { rateLimit } from '../lib/rate-limit';
 import { isAdminEmail } from '../lib/auth';
+import { mapAIResultToFormState } from '../components/AdminProductEditor';
 
 // Portal berbagi file: publik total, tanpa login/cart/checkout/payment.
 // Tests pin the portal security contracts so regressions fail fast.
@@ -185,6 +186,33 @@ describe('10. no shop/payment code remains', () => {
     const src = await import('node:fs/promises').then((fs) => fs.readFile('middleware.ts', 'utf8'));
     expect(src).toMatch(/\/admin/);
     expect(src).not.toMatch(/\/account/);
+  });
+});
+
+describe('11c. AI product auto-fill mapping', () => {
+  it('maps AI output to form fields used by the admin editor', () => {
+    const map = mapAIResultToFormState({
+      title: 'Template Ebook',
+      short_description: 'Panduan digital',
+      description: 'Kumpulan panduan digital yang bisa dipakai',
+      price: 150000,
+      currency: 'IDR',
+      category: 'Template',
+      install_steps: 'Unzip file\nGunakan sesuai kebutuhan',
+      notice: 'Pastikan file aman',
+      suggested_thumbnail_url: 'https://example.com/thumb.jpg',
+      tags: ['template', 'ebook'],
+    });
+
+    expect(map.title).toBe('Template Ebook');
+    expect(map.short_description).toBe('Panduan digital');
+    expect(map.description).toBe('Kumpulan panduan digital yang bisa dipakai');
+    expect(map.price).toBe(150000);
+    expect(map.category).toBe('Template');
+    expect(map.install_steps).toBe('Unzip file\nGunakan sesuai kebutuhan');
+    expect(map.notice).toBe('Pastikan file aman');
+    expect(map.thumbnail_url).toBe('https://example.com/thumb.jpg');
+    expect(map.featured).toBe(false);
   });
 });
 

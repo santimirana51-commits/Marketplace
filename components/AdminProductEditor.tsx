@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { formatBytes } from '@/lib/format';
 import { parseBulkLines, MAX_BULK_FILES } from '@/lib/validation';
 import { CATEGORIES } from '@/lib/categories';
@@ -21,7 +21,23 @@ type AIProductData = {
   tags?: string[];
 };
 
+export function mapAIResultToFormState(result: AIProductData) {
+  return {
+    title: result.title ?? '',
+    short_description: result.short_description ?? '',
+    description: result.description ?? '',
+    price: typeof result.price === 'number' ? result.price : Number(result.price ?? 0),
+    currency: result.currency ?? 'IDR',
+    category: result.category ?? 'Lainnya',
+    install_steps: result.install_steps ?? '',
+    notice: result.notice ?? '',
+    thumbnail_url: result.suggested_thumbnail_url ?? '',
+    featured: false,
+  };
+}
+
 export function AdminProductEditor({ product, files: initial }: { product: Product; files: FileRow[] }) {
+  const formRef = useRef<HTMLFormElement | null>(null);
   const [files, setFiles] = useState<FileRow[]>(initial);
   const [msg, setMsg] = useState<string | null>(null);
   const [driveName, setDriveName] = useState('');
@@ -129,16 +145,37 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
 
   function applyAIResult() {
     if (!aiResult) return;
-    // The form uses defaultValue, so we need to update the form fields directly
-    // We'll dispatch a custom event that the form can listen to, or use a different approach
-    // For now, we'll update the product state by triggering a re-render with new defaultValues
-    // Since we can't easily update defaultValue, we'll show the AI result for manual copy
-    setMsg('AI suggestions ready. Copy values to form fields above.');
+    const form = formRef.current;
+    if (!form) {
+      setMsg('Form is not ready yet.');
+      return;
+    }
+
+    const values = mapAIResultToFormState(aiResult);
+    const fieldMap: Array<[string, string]> = [
+      ['title', values.title],
+      ['short_description', values.short_description],
+      ['description', values.description],
+      ['thumbnail_url', values.thumbnail_url],
+      ['install_steps', values.install_steps],
+      ['notice', values.notice],
+      ['category', values.category],
+    ];
+
+    for (const [name, value] of fieldMap) {
+      const el = form.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`);
+      if (el) el.value = value;
+    }
+
+    const featured = form.querySelector<HTMLInputElement>('input[name="featured"]');
+    if (featured) featured.checked = values.featured;
+
+    setMsg('AI hasil sudah diisi ke form. Klik Save untuk menyimpan.');
   }
 
   return (
     <div className="mt-6 space-y-6">
-      <form onSubmit={saveBasics} className="card space-y-3">
+      <form ref={formRef} onSubmit={saveBasics} className="card space-y-3">
         <div><label className="label">Title</label><input name="title" defaultValue={product.title} className="input" /></div>
         <div><label className="label">Short description</label><input name="short_description" defaultValue={product.short_description ?? ''} className="input" /></div>
         <div><label className="label">Description</label><textarea name="description" defaultValue={product.description ?? ''} rows={5} className="input" /></div>
@@ -182,7 +219,7 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
       <div className="card border-brand-200">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">🤖</span>
-          <h3 className="font-semibold text-brand-700">AI Assistant (Free - Groq Llama 3)</h3>
+          <h3 className="font-semibold text-brand-700">AI Assistant (Gemini / Ollama)</h3>
         </div>
         <p className="text-xs text-zinc-500 mb-3">Tempel teks deskripsi produk — AI akan mengekstrak info & mengisi otomatis field di atas. <strong>Catatan: Tier gratis hanya mendukung teks, tidak bisa analisis gambar.</strong></p>
         
@@ -224,7 +261,7 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
                 {aiResult.tags?.length && <div className="p-2 bg-zinc-50 rounded"><strong>Tags:</strong> {aiResult.tags.join(', ')}</div>}
               </div>
               <button type="button" className="btn-secondary text-sm" onClick={applyAIResult}>
-                Sudah Disalin Manual
+                Isi Form Otomatis
               </button>
             </div>
           )}

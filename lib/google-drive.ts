@@ -1,5 +1,15 @@
-import { google } from 'googleapis';
 import { log } from '@/lib/logger';
+
+type GoogleDriveModule = typeof import('googleapis');
+
+let googleModule: GoogleDriveModule | null = null;
+
+async function getGoogleDrive() {
+  if (!googleModule) {
+    googleModule = await import('googleapis');
+  }
+  return googleModule.google;
+}
 
 export type DriveMeta = {
   id: string;
@@ -15,27 +25,30 @@ const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
  * 7-day test-mode expiry). The product folder must be SHARED with the
  * service account email (Viewer is enough).
  */
-function serviceAuth() {
+async function serviceAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n');
   if (!email || !key) return null;
+  const google = await getGoogleDrive();
   return new google.auth.JWT({ email, key, scopes: [DRIVE_SCOPE] });
 }
 
-function oauthClient() {
+async function oauthClient() {
   const id = process.env.GOOGLE_DRIVE_CLIENT_ID;
   const secret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
   const refresh = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
   if (!id || !secret || !refresh) {
     throw new Error('Google Drive credentials not configured');
   }
+  const google = await getGoogleDrive();
   const oauth = new google.auth.OAuth2(id, secret);
   oauth.setCredentials({ refresh_token: refresh });
   return oauth;
 }
 
-function drive() {
-  return google.drive({ version: 'v3', auth: serviceAuth() ?? oauthClient() });
+async function drive() {
+  const google = await getGoogleDrive();
+  return google.drive({ version: 'v3', auth: (await serviceAuth()) ?? (await oauthClient()) });
 }
 
 /** True when any server-side Drive credential pair is present. */
@@ -49,7 +62,7 @@ export function isDriveConfigured(): boolean {
 /** Fetch metadata; throws DriveNotFound on 404. Never logs secrets. */
 export async function getDriveFileMetadata(fileId: string): Promise<DriveMeta> {
   try {
-    const res = await drive().files.get({
+    const res = await (await drive()).files.get({
       fileId,
       fields: 'id,name,mimeType,size',
       supportsAllDrives: true,
@@ -80,7 +93,7 @@ export async function downloadDriveFileStream(fileId: string): Promise<{
 }> {
   const meta = await getDriveFileMetadata(fileId);
   try {
-    const res = await drive().files.get(
+    const res = await (await drive()).files.get(
       { fileId, alt: 'media', supportsAllDrives: true },
       { responseType: 'stream' },
     );
