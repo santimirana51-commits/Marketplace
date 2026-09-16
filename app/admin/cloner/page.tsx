@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 type CloneMode = 'audit' | 'mirror' | 'assets';
 
@@ -11,6 +12,7 @@ const modeCopy: Record<CloneMode, { label: string; description: string }> = {
 };
 
 export default function WebsiteClonerPage() {
+  const router = useRouter();
   const [url, setUrl] = useState('');
   const [mode, setMode] = useState<CloneMode>('audit');
   const [depth, setDepth] = useState(2);
@@ -21,6 +23,7 @@ export default function WebsiteClonerPage() {
   const [batch, setBatch] = useState('');
   const [planReady, setPlanReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [implementing, setImplementing] = useState(false);
 
   const normalizedUrl = useMemo(() => {
     try {
@@ -45,6 +48,55 @@ export default function WebsiteClonerPage() {
       return;
     }
     setPlanReady(true);
+  }
+
+  async function implementAsDraft() {
+    if (!normalizedUrl || implementing) return;
+    setImplementing(true);
+    setError(null);
+    try {
+      const plan = `Target: ${normalizedUrl.href}
+Workflow: ${modeCopy[mode].label}
+Depth: ${depth}
+Delay: ${delay}s
+Respect robots.txt: ${robots}
+Same domain only: ${sameDomain}
+Include assets: ${assets}
+Batch targets: ${batchCount}`;
+      const aiResponse = await fetch('/api/admin/ai', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text: `Create a concise digital product draft from this authorized website clone plan. The product represents an offline website archive or asset pack. Do not claim the site was downloaded if it was not. Return title, short_description, description, install_steps, notice, category, and suggested_thumbnail_url only.\n\n${plan}` }),
+      });
+      const aiData = await aiResponse.json();
+      if (!aiResponse.ok) throw new Error(aiData.error ?? 'AI draft generation failed');
+      const product = aiData.product ?? {};
+      const title = String(product.title ?? `${modeCopy[mode].label} ${normalizedUrl.hostname}`);
+      const slug = `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 160) || 'website-archive'}-${Date.now().toString(36)}`;
+      const createResponse = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          slug,
+          short_description: String(product.short_description ?? `Authorized ${modeCopy[mode].label.toLowerCase()} for ${normalizedUrl.hostname}.`),
+          description: String(product.description ?? `Clone plan for ${normalizedUrl.href}.\n\n${plan}`),
+          install_steps: String(product.install_steps ?? 'Review the archive contents.\nFollow the included offline usage notes.'),
+          notice: String(product.notice ?? 'Use only with permission from the website owner. Review copyright and terms before publishing.'),
+          category: String(product.category ?? 'Lainnya'),
+          thumbnail_url: typeof product.suggested_thumbnail_url === 'string' && /^https?:\/\//.test(product.suggested_thumbnail_url) ? product.suggested_thumbnail_url : undefined,
+          status: 'draft',
+          featured: false,
+        }),
+      });
+      const created = await createResponse.json();
+      if (!createResponse.ok) throw new Error(created.error ?? 'Product creation failed');
+      router.push(`/admin/products/${created.product.id}`);
+    } catch (implementationError) {
+      setError(implementationError instanceof Error ? implementationError.message : 'Failed to implement product draft.');
+    } finally {
+      setImplementing(false);
+    }
   }
 
   return (
@@ -129,7 +181,11 @@ export default function WebsiteClonerPage() {
           <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-green-700">Preview only</span>
         </div>
         <pre className="mt-4 overflow-x-auto rounded-lg bg-zinc-950 p-4 text-xs leading-6 text-green-300">{`website-cloner ${mode} "${normalizedUrl.href}" --depth ${depth} --delay ${delay}${robots ? ' --robots' : ''}${sameDomain ? ' --same-domain' : ''}${assets ? ' --assets' : ''}`}</pre>
-        <p className="mt-3 text-xs text-green-800">Plan ini belum mengunduh data. Hubungkan worker/CLI terisolasi setelah output directory dan kebijakan izin ditetapkan.</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button type="button" className="btn-primary !bg-green-700 hover:!bg-green-800" onClick={implementAsDraft} disabled={implementing}>{implementing ? 'AI membuat draft...' : 'Implementasikan sebagai produk baru'}</button>
+          <p className="text-xs text-green-800">AI membuat metadata draft; review di editor sebelum publish.</p>
+        </div>
+        <p className="mt-3 text-xs text-green-800">Plan ini belum mengunduh data. Worker/CLI terisolasi tetap diperlukan untuk membuat arsip aktual.</p>
       </section>}
     </div>
   );
