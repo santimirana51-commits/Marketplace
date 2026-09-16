@@ -15,6 +15,7 @@ export function SiteHeader() {
         <div className="container-x flex h-8 items-center justify-between text-xs">
           <p className="truncate">⚡ Klik, unduh, gratis · Tanpa daftar · Tanpa link Drive publik</p>
           <nav className="flex items-center gap-4">
+            <Link href="/tools/image-converter" className="hover:text-white">Konverter gambar</Link>
             <Link href="/login" className="hover:text-white">Admin</Link>
           </nav>
         </div>
