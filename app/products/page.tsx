@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { listPublishedProducts } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
+import { NAV_CATS } from '@/lib/nav';
 
 export const metadata = { title: 'Products' };
 
@@ -27,6 +28,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: { q
         {products.length} item{products.length === 1 ? '' : 's'}
         {q ? <> · <Link href="/products" className="underline">Clear search</Link></> : null}
       </p>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+        {NAV_CATS.map((c) => (
+          <Link key={c.label} href={c.href} className="rounded-full border border-zinc-300 bg-white px-3 py-1 font-medium text-zinc-700 hover:border-brand-500 hover:text-brand-700">
+            {c.label}
+          </Link>
+        ))}
+      </div>
       <form action="/products" method="get" className="mt-4 flex max-w-xl gap-2" role="search">
         <input name="q" type="search" defaultValue={q} placeholder="Search templates, designs, PDFs, scripts…" className="input" aria-label="Search products" />
         <button type="submit" className="btn-primary shrink-0">Search</button>

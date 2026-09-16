@@ -30,6 +30,7 @@ export function SiteFooter() {
             <li><Link href="/account/orders" className="hover:underline">Track my orders</Link></li>
             <li><Link href="/account" className="hover:underline">Re-download files</Link></li>
             <li><Link href="/cart" className="hover:underline">Cart</Link></li>
+            <li><Link href="/#faq" className="hover:underline">FAQ</Link></li>
           </ul>
         </div>
         <div className="text-sm">
