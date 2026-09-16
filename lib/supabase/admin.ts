@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * fetch without Next.js Data Cache: product/order/download reads must
- * reflect admin edits and new purchases immediately, not a stale snapshot.
+ * fetch without Next.js Data Cache: product/file reads must reflect admin
+ * edits immediately, not a stale snapshot.
  */
 const liveFetch: typeof fetch = (input, init) =>
   fetch(input, { ...init, cache: 'no-store' });

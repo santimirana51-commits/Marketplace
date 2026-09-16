@@ -26,8 +26,8 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
       const fd = new FormData(e.currentTarget);
       await patch({
         title: String(fd.get('title')), description: String(fd.get('description') ?? ''),
-        short_description: String(fd.get('short_description') ?? ''), price: Number(fd.get('price')),
-        currency: String(fd.get('currency')), thumbnail_url: String(fd.get('thumbnail_url') ?? '') || null,
+        short_description: String(fd.get('short_description') ?? ''),
+        thumbnail_url: String(fd.get('thumbnail_url') ?? '') || null,
         status: String(fd.get('status')), featured: fd.get('featured') === 'on',
       });
       setMsg('Saved.');
@@ -61,10 +61,6 @@ export function AdminProductEditor({ product, files: initial }: { product: Produ
         <div><label className="label">Title</label><input name="title" defaultValue={product.title} className="input" /></div>
         <div><label className="label">Short description</label><input name="short_description" defaultValue={product.short_description ?? ''} className="input" /></div>
         <div><label className="label">Description</label><textarea name="description" defaultValue={product.description ?? ''} rows={5} className="input" /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Price</label><input name="price" type="number" step="0.01" defaultValue={product.price} className="input" /></div>
-          <div><label className="label">Currency</label><input name="currency" defaultValue={product.currency} className="input" /></div>
-        </div>
         <div><label className="label">Thumbnail URL</label><input name="thumbnail_url" defaultValue={product.thumbnail_url ?? ''} className="input" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Status</label><select name="status" defaultValue={product.status} className="input"><option value="draft">draft</option><option value="published">published</option><option value="archived">archived</option></select></div>

@@ -26,9 +26,21 @@ export async function getPublishedProduct(slug: string) {
     .eq('status', 'published')
     .maybeSingle();
   if (!product) return null;
-  const { data: files } = await supabase
+  type Row = { id: string; name: string; google_drive_mime_type?: string | null; file_size?: number | null; downloads?: number | null };
+  let files: Row[] | null = null;
+  const first = await supabase
     .from('product_files')
-    .select('id,name,google_drive_mime_type,file_size')
+    .select('id,name,google_drive_mime_type,file_size,downloads')
     .eq('product_id', product.id);
+  if (first.error) {
+    // Pre-0005 databases lack the downloads column — degrade gracefully.
+    const retry = await supabase
+      .from('product_files')
+      .select('id,name,google_drive_mime_type,file_size')
+      .eq('product_id', product.id);
+    files = (retry.data as Row[] | null) ?? null;
+  } else {
+    files = (first.data as Row[] | null) ?? null;
+  }
   return { product, files: files ?? [] };
 }

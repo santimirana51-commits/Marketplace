@@ -3,11 +3,11 @@ import { listPublishedProducts } from '@/lib/products';
 import { ProductCard } from '@/components/ProductCard';
 import { NAV_CATS } from '@/lib/nav';
 
-export const metadata = { title: 'Products' };
+export const metadata = { title: 'Semua File' };
 
 type P = {
   title: string; slug: string; short_description?: string | null;
-  description?: string | null; price: number | string;
+  description?: string | null; thumbnail_url?: string | null;
 };
 
 export default async function ProductsPage({ searchParams }: { searchParams: { q?: string } }) {
@@ -23,10 +23,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: { q
 
   return (
     <div className="container-x py-10">
-      <h1 className="text-3xl font-bold">{q ? `Results for “${q}”` : 'All products'}</h1>
+      <h1 className="text-3xl font-bold">{q ? `Hasil untuk “${q}”` : 'Semua file'}</h1>
       <p className="mt-1 text-sm text-zinc-600">
-        {products.length} item{products.length === 1 ? '' : 's'}
-        {q ? <> · <Link href="/products" className="underline">Clear search</Link></> : null}
+        {products.length} file
+        {q ? <> · <Link href="/products" className="underline">Hapus pencarian</Link></> : null}
       </p>
       <div className="mt-3 flex flex-wrap gap-2 text-xs">
         {NAV_CATS.map((c) => (
@@ -36,18 +36,18 @@ export default async function ProductsPage({ searchParams }: { searchParams: { q
         ))}
       </div>
       <form action="/products" method="get" className="mt-4 flex max-w-xl gap-2" role="search">
-        <input name="q" type="search" defaultValue={q} placeholder="Search templates, designs, PDFs, scripts…" className="input" aria-label="Search products" />
-        <button type="submit" className="btn-primary shrink-0">Search</button>
+        <input name="q" type="search" defaultValue={q} placeholder="Cari template, desain, PDF, script…" className="input" aria-label="Cari file" />
+        <button type="submit" className="btn-primary shrink-0">Cari</button>
       </form>
       {products.length ? (
         <div className="mt-6 grid gap-5 sm:grid-cols-3">
-          {products.map((p) => <ProductCard key={p.slug} p={{ ...p, price: Number(p.price) }} />)}
+          {products.map((p) => <ProductCard key={p.slug} p={p} />)}
         </div>
       ) : (
         <div className="card mt-6 max-w-xl">
-          <p className="font-semibold">No results{q ? <> for “{q}”</> : null}.</p>
-          <p className="mt-1 text-sm text-zinc-600">Try another keyword, or browse everything.</p>
-          <Link href="/products" className="btn-secondary mt-4">Browse all products</Link>
+          <p className="font-semibold">Tidak ada hasil{q ? <> untuk “{q}”</> : null}.</p>
+          <p className="mt-1 text-sm text-zinc-600">Coba kata kunci lain, atau jelajahi semuanya.</p>
+          <Link href="/products" className="btn-secondary mt-4">Lihat semua file</Link>
         </div>
       )}
     </div>

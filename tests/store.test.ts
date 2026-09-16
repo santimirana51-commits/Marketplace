@@ -1,18 +1,18 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { generateRawToken, hashToken, tokenExpiry, maxDownloads } from '../lib/tokens';
-import { checkoutSchema, adminProductSchema, adminFileSchema } from '../lib/validation';
-import { formatPrice, formatBytes, isFreePrice, formatPriceFree } from '../lib/format';
+import { existsSync } from 'node:fs';
+import { adminProductSchema, adminFileSchema } from '../lib/validation';
+import { formatPrice, formatBytes } from '../lib/format';
 import { rateLimit } from '../lib/rate-limit';
 import { isAdminEmail } from '../lib/auth';
 
-// Spec §21 — 15 required areas, mapped to unit-testable contracts.
-// DB/Stripe/Drive network integration runs against staging (see README);
-// these tests pin the security contracts so regressions fail fast.
+// Portal berbagi file: publik total, tanpa login/cart/checkout/payment.
+// Tests pin the portal security contracts so regressions fail fast.
 
 describe('1. product creation validation', () => {
-  it('accepts a valid product payload', () => {
-    const r = adminProductSchema.safeParse({ title: 'UI Kit', slug: 'ui-kit', price: 29.99 });
+  it('accepts a valid payload without price (portal: everything free)', () => {
+    const r = adminProductSchema.safeParse({ title: 'Panduan', slug: 'panduan' });
     expect(r.success).toBe(true);
+    if (r.success) expect(r.data.price).toBe(0);
   });
   it('rejects negative prices', () => {
     expect(adminProductSchema.safeParse({ title: 'T', slug: 't', price: -1 }).success).toBe(false);
@@ -22,129 +22,65 @@ describe('1. product creation validation', () => {
 describe('2. product publishing', () => {
   it('accepts draft/published/archived only', () => {
     for (const status of ['draft', 'published', 'archived'] as const) {
-      expect(adminProductSchema.safeParse({ title: 'T', slug: 't', price: 1, status }).success).toBe(true);
+      expect(adminProductSchema.safeParse({ title: 'T', slug: 't', status }).success).toBe(true);
     }
-    expect(adminProductSchema.safeParse({ title: 'T', slug: 't', price: 1, status: 'live' }).success).toBe(false);
+    expect(adminProductSchema.safeParse({ title: 'T', slug: 't', status: 'live' }).success).toBe(false);
   });
 });
 
-describe('3. checkout session creation input', () => {
-  it('accepts a valid cart and strips price injection', () => {
-    const r = checkoutSchema.safeParse({ items: [{ slug: 'ui-kit', quantity: 2 }] });
-    expect(r.success).toBe(true);
+describe('3. slugs + drive ids + optional display name', () => {
+  it('rejects bad slugs', () => {
+    expect(adminProductSchema.safeParse({ title: 'T', slug: 'Bad Slug!' }).success).toBe(false);
   });
-  it('rejects empty carts and bad quantities', () => {
-    expect(checkoutSchema.safeParse({ items: [] }).success).toBe(false);
-    expect(checkoutSchema.safeParse({ items: [{ slug: 'x', quantity: 0 }] }).success).toBe(false);
-    expect(checkoutSchema.safeParse({ items: [{ slug: 'x', quantity: 99 }] }).success).toBe(false);
-  });
-  it('never reads client prices (unknown keys stripped)', () => {
-    const r = checkoutSchema.safeParse({ items: [{ slug: 'x', quantity: 1, price: 0.01 }] });
-    expect(r.success).toBe(true);
-    if (r.success) expect('price' in r.data.items[0]).toBe(false);
+  it('requires Drive file id, name optional (falls back to Drive name)', () => {
+    expect(adminFileSchema.safeParse({ google_drive_file_id: 'x' }).success).toBe(false);
+    expect(adminFileSchema.safeParse({ google_drive_file_id: '1AbCdefGh' }).success).toBe(true);
+    const r = adminFileSchema.safeParse({ google_drive_file_id: '1AbCdefGh' });
+    if (r.success) expect(r.data.name).toBe('');
   });
 });
 
-describe('4. stripe webhook verification contract', () => {
-  it('requires stripe-signature header (route returns 400 without it)', async () => {
-    // Route contract: missing sig/secret => 400 before any DB work.
-    const { POST } = await import('../app/api/stripe/webhook/route');
-    const res = await POST(new Request('http://x/api/stripe/webhook', { method: 'POST', body: '{}' }));
-    expect([400]).toContain(res.status);
+describe('4. formatting', () => {
+  it('formats USD (legacy helper kept)', () => expect(formatPrice(29.99, 'USD')).toBe('$29.99'));
+  it('formats bytes', () => {
+    expect(formatBytes(undefined)).toBe('—');
+    expect(formatBytes(512)).toBe('512 B');
+    expect(formatBytes(2048)).toBe('2.0 KB');
+  });
+  it('exports beforeEach helper available (sanity)', () => {
+    expect(typeof beforeEach).toBe('function');
   });
 });
 
-describe('5. duplicate webhook handling (idempotency gates)', () => {
-  it('documents the two gates: payments.raw_event_id unique + orders.stripe_session_id lookup', () => {
-    // Enforced in app/api/stripe/webhook/route.ts: gate 1 checks payments
-    // by raw_event_id, gate 2 checks orders by stripe_session_id+paid.
-    // Live replay test: re-send event from Stripe Dashboard => {duplicate:true}.
-    expect(true).toBe(true);
-  });
-});
-
-describe('6. order creation snapshots price/title', () => {
-  it('order_items carry product_title + price (schema requires both)', async () => {
-    const src = await import('node:fs/promises').then((fs) => fs.readFile('supabase/migrations/0001_schema.sql', 'utf8'));
-    expect(src).toMatch(/product_title/);
-    expect(src).toMatch(/price numeric/);
-  });
-});
-
-describe('7. download token creation (hash-only)', () => {
-  it('generates 256-bit base64url tokens, unique per call', () => {
-    const a = generateRawToken();
-    const b = generateRawToken();
-    expect(a).not.toBe(b);
-    expect(a.length).toBeGreaterThanOrEqual(40);
-    expect(a).not.toMatch(/[+/=]/);
-  });
-  it('stores SHA-256 hex only, never raw', () => {
-    const raw = generateRawToken();
-    const h = hashToken(raw);
-    expect(h).toMatch(/^[0-9a-f]{64}$/);
-    expect(h).not.toContain(raw);
-    expect(hashToken(raw)).toBe(h);
-  });
-  it('respects TTL and max-download envs', () => {
-    expect(tokenExpiry(1).getTime()).toBeGreaterThan(Date.now());
-    expect(maxDownloads()).toBeGreaterThan(0);
-  });
-});
-
-describe('8. invalid token rejected', () => {
-  it('short/malformed tokens never hash-match (route returns 404)', async () => {
-    const { GET } = await import('../app/api/download/[token]/route');
-    const res = await GET(new Request('http://x/api/download/x'), { params: { token: 'x' } });
-    expect(res.status).toBe(404);
-  });
-});
-
-describe('9. expired token rejected', () => {
-  it('expiry helper produces future dates; route checks expires_at < now => 410', () => {
-    const past = new Date(Date.now() - 1000);
-    expect(past.getTime()).toBeLessThan(Date.now());
-    expect(tokenExpiry(72).getTime()).toBeGreaterThan(Date.now());
-  });
-});
-
-describe('10. unauthorized download rejected', () => {
-  it('download route enforces paid order + ownership (unpaid => 403/404, never file id passthrough)', async () => {
-    const src = await import('node:fs/promises').then((fs) =>
-      fs.readFile('app/api/download/[token]/route.ts', 'utf8'),
-    );
-    expect(src).toMatch(/orderStatus !== 'paid'/);
-    expect(src).not.toMatch(/searchParams.*fileId|fileId.*searchParams/);
-  });
-});
-
-describe('11. download limit enforced', () => {
-  it('route compares download_count >= max_downloads => 429', async () => {
-    const src = await import('node:fs/promises').then((fs) =>
-      fs.readFile('app/api/download/[token]/route.ts', 'utf8'),
-    );
-    expect(src).toMatch(/download_count >= row.max_downloads/);
-  });
-  it('rate limiter blocks bursts', () => {
+describe('5. rate limiting', () => {
+  it('blocks bursts', () => {
     const key = `test:${Math.random()}`;
     for (let i = 0; i < 5; i++) expect(rateLimit(key, 5)).toBe(true);
     expect(rateLimit(key, 5)).toBe(false);
   });
 });
 
-describe('12-13. google drive file retrieval + missing file', () => {
-  it('exposes getDriveFile/getDriveFileMetadata/downloadDriveFile and maps 404', async () => {
+describe('6. google drive lib', () => {
+  it('exposes metadata/stream/validate + link extraction, maps 404, never logs secrets', async () => {
     const mod = await import('../lib/google-drive');
     expect(typeof mod.getDriveFileMetadata).toBe('function');
     expect(typeof mod.getDriveFile).toBe('function');
     expect(typeof mod.downloadDriveFile).toBe('function');
+    expect(typeof mod.extractDriveFileId).toBe('function');
+    expect(typeof mod.isDriveConfigured).toBe('function');
     const src = await import('node:fs/promises').then((fs) => fs.readFile('lib/google-drive.ts', 'utf8'));
     expect(src).toMatch(/Drive file not found/);
     expect(src).not.toMatch(/REFRESH_TOKEN.*console|console.*REFRESH/);
   });
+  it('accepts bare ids and full share links', async () => {
+    const { extractDriveFileId } = await import('../lib/google-drive');
+    expect(extractDriveFileId('1g3OgK_QQUGQlrlodieSxyz')).toBe('1g3OgK_QQUGQlrlodieSxyz');
+    expect(extractDriveFileId('https://drive.google.com/file/d/1g3OgK_QQUGQlrlodieSxyz/view?usp=sharing')).toBe('1g3OgK_QQUGQlrlodieSxyz');
+    expect(extractDriveFileId('https://drive.google.com/open?id=1g3OgK_QQUGQlrlodieSxyz')).toBe('1g3OgK_QQUGQlrlodieSxyz');
+  });
 });
 
-describe('14. admin authorization', () => {
+describe('7. admin authorization', () => {
   it('allow-list email check is case-insensitive, never trusts client roles', async () => {
     vi.stubEnv('ADMIN_EMAILS', 'Owner@Example.com');
     expect(isAdminEmail('owner@example.com')).toBe(true);
@@ -163,171 +99,114 @@ describe('14. admin authorization', () => {
   });
 });
 
-describe('15. customer authorization', () => {
-  it('order APIs scope by customers.user_id (no cross-customer reads)', async () => {
+describe('8. migrations 0001-0005', () => {
+  it('schema, RLS, hardening, provider, downloads counter all exist', async () => {
     const fs = await import('node:fs/promises');
-    const a = await fs.readFile('app/api/orders/[id]/route.ts', 'utf8');
-    const b = await fs.readFile('app/api/account/download-link/route.ts', 'utf8');
-    expect(a).toMatch(/eq\('customer_id', cid\)/);
-    expect(b).toMatch(/eq\('status', 'paid'\)/);
-  });
-  it('RLS enables least privilege with no write policies for anon', async () => {
-    const fs = await import('node:fs/promises');
+    const s1 = await fs.readFile('supabase/migrations/0001_schema.sql', 'utf8');
+    expect(s1).toMatch(/product_files/);
     const rls = await fs.readFile('supabase/migrations/0002_rls.sql', 'utf8');
     expect(rls).toMatch(/enable row level security/);
     const hardening = await fs.readFile('supabase/migrations/0003_hardening.sql', 'utf8');
     expect(hardening).toMatch(/product_files/);
+    expect(existsSync('supabase/migrations/0004_provider.sql')).toBe(true);
+    const m5 = await fs.readFile('supabase/migrations/0005_downloads.sql', 'utf8');
+    expect(m5).toMatch(/downloads/);
   });
 });
 
-describe('validation: slugs + drive ids', () => {
-  it('rejects bad slugs', () => {
-    expect(adminProductSchema.safeParse({ title: 'T', slug: 'Bad Slug!', price: 5 }).success).toBe(false);
+describe('9. public download route contract', () => {
+  const P = 'app/api/files/[id]/download/route.ts';
+  it('serves published files only (404 otherwise)', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile(P, 'utf8'));
+    expect(src).toMatch(/published/);
+    expect(src).toMatch(/status.*404/);
   });
-  it('requires Drive file id for attachments', () => {
-    expect(adminFileSchema.safeParse({ name: 'f', google_drive_file_id: 'x' }).success).toBe(false);
-    expect(adminFileSchema.safeParse({ name: 'f', google_drive_file_id: '1AbCdefGh' }).success).toBe(true);
+  it('rate-limits per IP (429)', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile(P, 'utf8'));
+    expect(src).toMatch(/rateLimit/);
+    expect(src).toMatch(/429/);
   });
-});
-
-describe('16. free vs paid products', () => {
-  it('price 0 passes product validation (free needs no migration)', () => {
-    expect(adminProductSchema.safeParse({ title: 'Freebie', slug: 'freebie', price: 0 }).success).toBe(true);
+  it('increments counter tolerantly + streams with safe headers', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile(P, 'utf8'));
+    expect(src).toMatch(/downloads/);
+    expect(src).toMatch(/downloadDriveFileStream/);
+    expect(src).toMatch(/attachment/);
+    expect(src).toMatch(/no-store/);
+    expect(src).toMatch(/nosniff/);
   });
-  it('detects free prices incl. string "0"', () => {
-    expect(isFreePrice(0)).toBe(true);
-    expect(isFreePrice('0')).toBe(true);
-    expect(isFreePrice('0.00')).toBe(true);
-    expect(isFreePrice(29)).toBe(false);
-    expect(isFreePrice('29.99')).toBe(false);
+  it('needs no login/token/order — and never takes Drive ids from client', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile(P, 'utf8'));
+    expect(src).not.toMatch(/requireUser|getSessionUser|hashToken|orderStatus|paid/);
+    expect(src).not.toMatch(/google_drive_file_id.*params|params.*google_drive_file_id/);
   });
-  it('displays Free instead of $0.00', () => {
-    expect(formatPriceFree(0)).toBe('Free');
-    expect(formatPriceFree('0', 'USD')).toBe('Free');
-    expect(formatPriceFree(29, 'USD')).toBe('$29.00');
-  });
-  it('free checkout path requires login + never touches Stripe', async () => {
-    const fs = await import('node:fs/promises');
-    const src = await fs.readFile('app/api/checkout/route.ts', 'utf8');
-    expect(src).toMatch(/total <= 0/);
-    expect(src).toMatch(/requireUser/);
-    expect(src).toMatch(/Sign in to download free products/);
-    expect(src).toMatch(/provider: 'free'/);
-    // free fulfillment inserts its own order — Stripe session never created on that path
-    const freeBlock = src.slice(src.indexOf('FREE PATH'), src.indexOf('Stripe rejects'));
-    expect(freeBlock).not.toMatch(/stripe\(\)/);
-  });
-  it('mixed carts charge only priced items, free items ride in metadata', async () => {
-    const fs = await import('node:fs/promises');
-    const src = await fs.readFile('app/api/checkout/route.ts', 'utf8');
-    expect(src).toMatch(/filter\(\(i\) => Number\(.*\.price\) > 0\)/);
-  });
-  it('free clients redirect to login/order instead of Stripe URL', async () => {
-    const fs = await import('node:fs/promises');
-    const a = await fs.readFile('components/CheckoutButton.tsx', 'utf8');
-    const b = await fs.readFile('components/CartQuickBuy.tsx', 'utf8');
-    expect(a).toMatch(/data\.free/);
-    expect(a).toMatch(/\/login/);
-    expect(b).toMatch(/Get Free/);
+  it('rejects malformed ids with 404', async () => {
+    const { GET } = await import('../app/api/files/[id]/download/route');
+    const res = await GET(new Request('http://x/api/files/x/download'), { params: { id: '' } });
+    expect(res.status).toBe(404);
   });
 });
 
-describe('17. midtrans provider', () => {
-  it('verifies notification signature against a known vector', async () => {
-    const { verifyMidtransSignature } = await import('../lib/midtrans');
-    const good = {
-      order_id: 'pb-abc123', status_code: '200', gross_amount: '29000',
-      signature_key: 'ba5c57e8665590fd91a0c91ee53545cfe4476f1ca0f561edb40574e5639cbef278eea161d79de40d760339c6d6ac03bfe842e7498350449383e82666ed1dcb61',
-      transaction_status: 'settlement',
-    };
-    expect(verifyMidtransSignature(good, 'test-server-key')).toBe(true);
-    expect(verifyMidtransSignature({ ...good, gross_amount: '29001' }, 'test-server-key')).toBe(false);
-    expect(verifyMidtransSignature({ ...good, signature_key: 'zz' }, 'test-server-key')).toBe(false);
-    expect(verifyMidtransSignature(good, 'wrong-key')).toBe(false);
+describe('10. no shop/payment code remains', () => {
+  const gone = [
+    'app/api/checkout/route.ts',
+    'app/api/stripe/webhook/route.ts',
+    'app/api/midtrans/webhook/route.ts',
+    'app/api/orders/route.ts',
+    'app/api/account/download-link/route.ts',
+    'app/api/download/[token]/route.ts',
+    'app/cart/page.tsx',
+    'app/checkout/page.tsx',
+    'app/success/page.tsx',
+    'app/account/page.tsx',
+    'app/admin/orders/page.tsx',
+    'app/admin/customers/page.tsx',
+    'components/CartProvider.tsx',
+    'components/CartBadge.tsx',
+    'components/CheckoutButton.tsx',
+    'components/CartQuickBuy.tsx',
+    'components/AddToCartButton.tsx',
+    'components/DownloadButtons.tsx',
+    'lib/stripe.ts',
+    'lib/midtrans.ts',
+    'lib/tokens.ts',
+  ];
+  it.each(gone)('%s is deleted', (f) => {
+    expect(existsSync(f)).toBe(false);
   });
-  it('maps transaction statuses (cards need fraud accept)', async () => {
-    const { midtransOrderStatus } = await import('../lib/midtrans');
-    expect(midtransOrderStatus({ transaction_status: 'settlement' })).toBe('paid');
-    expect(midtransOrderStatus({ transaction_status: 'capture', fraud_status: 'accept' })).toBe('paid');
-    expect(midtransOrderStatus({ transaction_status: 'capture', fraud_status: 'challenge' })).toBe('pending');
-    expect(midtransOrderStatus({ transaction_status: 'pending' })).toBe('pending');
-    expect(midtransOrderStatus({ transaction_status: 'expire' })).toBe('cancelled');
-    expect(midtransOrderStatus({ transaction_status: 'deny' })).toBe('failed');
-  });
-  it('mints unique pb- order ids', async () => {
-    const { newMidtransOrderId } = await import('../lib/midtrans');
-    const a = newMidtransOrderId();
-    expect(a).toMatch(/^pb-[0-9a-f]+$/);
-    expect(newMidtransOrderId()).not.toBe(a);
-  });
-  it('checkout picks midtrans for IDR, rejects non-IDR, keeps stripe fallback', async () => {
+  it('no price/cart/checkout code remains in storefront', async () => {
     const fs = await import('node:fs/promises');
-    const src = await fs.readFile('app/api/checkout/route.ts', 'utf8');
-    expect(src).toMatch(/MIDTRANS_SERVER_KEY/);
-    expect(src).toMatch(/Midtrans only processes IDR/);
-    expect(src).toMatch(/provider_order_id/);
-    expect(src).toMatch(/createSnapTransaction/);
-    expect(src).toMatch(/Payments not configured/);
+    for (const f of ['app/page.tsx', 'components/ProductCard.tsx', 'components/SiteHeader.tsx']) {
+      const src = await fs.readFile(f, 'utf8');
+      expect(src).not.toMatch(/formatPrice|isFreePrice|useCart|CartBadge/);
+      expect(src).not.toMatch(/\/cart|\/checkout|Stripe|Midtrans|QRIS/);
+    }
   });
-  it('midtrans webhook verifies signature + amount + idempotency gates', async () => {
-    const fs = await import('node:fs/promises');
-    const src = await fs.readFile('app/api/midtrans/webhook/route.ts', 'utf8');
-    expect(src).toMatch(/verifyMidtransSignature/);
-    expect(src).toMatch(/Amount mismatch/);
-    expect(src).toMatch(/duplicate/);
-    expect(src).toMatch(/provider_payment_id/);
+  it('middleware protects only /admin', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('middleware.ts', 'utf8'));
+    expect(src).toMatch(/\/admin/);
+    expect(src).not.toMatch(/\/account/);
   });
 });
 
-describe('18. drive file id extraction', () => {
-  it('accepts bare ids and full share links', async () => {
-    const { extractDriveFileId } = await import('../lib/google-drive');
-    expect(extractDriveFileId('1g3OgK_QQUGQlrlodieSxyz')).toBe('1g3OgK_QQUGQlrlodieSxyz');
-    expect(extractDriveFileId('https://drive.google.com/file/d/1g3OgK_QQUGQlrlodieSxyz/view?usp=sharing')).toBe('1g3OgK_QQUGQlrlodieSxyz');
-    expect(extractDriveFileId('https://drive.google.com/open?id=1g3OgK_QQUGQlrlodieSxyz')).toBe('1g3OgK_QQUGQlrlodieSxyz');
-    expect(extractDriveFileId('  1g3OgK_QQUGQlrlodieSxyz  ')).toBe('1g3OgK_QQUGQlrlodieSxyz');
+describe('11. portal admin surface', () => {
+  it('nav has Dashboard + Products only (no orders/customers)', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('components/AdminShell.tsx', 'utf8'));
+    expect(src).toMatch(/\/admin\/products/);
+    expect(src).not.toMatch(/\/admin\/orders|\/admin\/customers/);
   });
-});
-
-describe('19. spree-inspired refactor', () => {
-  it('PDP has breadcrumbs + accordions + related + sticky bar (ID)', async () => {
+  it('dashboard stats files + downloads, product forms have no price', async () => {
     const fs = await import('node:fs/promises');
-    const src = await fs.readFile('app/products/[slug]/page.tsx', 'utf8');
-    expect(src).toMatch(/Breadcrumb/);
-    expect(src).toMatch(/Beranda/);
-    expect(src).toMatch(/Produk terkait/);
-    expect(src).toMatch(/fixed inset-x-0 bottom-0/);
-    expect(src).toMatch(/<details/);
-  });
-  it('account orders use a table with status badges (ID)', async () => {
-    const fs = await import('node:fs/promises');
-    const src = await fs.readFile('app/account/orders/page.tsx', 'utf8');
-    expect(src).toMatch(/Pesanan saya/);
-    expect(src).toMatch(/StatusBadge/);
-    expect(src).toMatch(/<table/);
-  });
-  it('admin has order detail (items/payments/summary/customer) + home stats', async () => {
-    const fs = await import('node:fs/promises');
-    const detail = await fs.readFile('app/admin/orders/[id]/page.tsx', 'utf8');
     const home = await fs.readFile('app/admin/page.tsx', 'utf8');
-    const list = await fs.readFile('app/admin/orders/page.tsx', 'utf8');
-    expect(detail).toMatch(/Payments/);
-    expect(detail).toMatch(/Summary/);
-    expect(detail).toMatch(/Customer/);
-    expect(home).toMatch(/Revenue/);
-    expect(home).toMatch(/Top products/);
-    expect(list).toMatch(/admin\/orders\//);
+    expect(home).toMatch(/downloads/i);
+    expect(home).not.toMatch(/Revenue|order_items/);
+    const editor = await fs.readFile('components/AdminProductEditor.tsx', 'utf8');
+    expect(editor).not.toMatch(/name="price"|fd\.get\('price'\)/);
+    const fresh = await fs.readFile('app/admin/products/new/page.tsx', 'utf8');
+    expect(fresh).not.toMatch(/name="price"/);
   });
-});
-
-describe('formatting', () => {
-  it('formats USD', () => expect(formatPrice(29.99, 'USD')).toBe('$29.99'));
-  it('formats bytes', () => {
-    expect(formatBytes(undefined)).toBe('—');
-    expect(formatBytes(512)).toBe('512 B');
-    expect(formatBytes(2048)).toBe('2.0 KB');
-  });
-  it('exports beforeEach helper available (sanity)', () => {
-    expect(typeof beforeEach).toBe('function');
+  it('detail page links straight to /api/files download', async () => {
+    const src = await import('node:fs/promises').then((fs) => fs.readFile('app/products/[slug]/page.tsx', 'utf8'));
+    expect(src).toMatch(/\/api\/files\//);
+    expect(src).not.toMatch(/AddToCart|BuyNow|formatPrice/);
   });
 });

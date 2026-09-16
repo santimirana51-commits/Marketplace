@@ -17,8 +17,6 @@ export default function NewProductPage() {
       slug: String(fd.get('slug')),
       description: String(fd.get('description') ?? ''),
       short_description: String(fd.get('short_description') ?? ''),
-      price: Number(fd.get('price')),
-      currency: String(fd.get('currency') ?? 'USD'),
       thumbnail_url: String(fd.get('thumbnail_url') ?? '') || undefined,
       status: String(fd.get('status') ?? 'draft'),
       featured: fd.get('featured') === 'on',
@@ -41,10 +39,6 @@ export default function NewProductPage() {
         <div><label className="label">Slug</label><input name="slug" required pattern="[a-z0-9-]+" className="input" placeholder="my-template" /></div>
         <div><label className="label">Short description</label><input name="short_description" className="input" /></div>
         <div><label className="label">Description</label><textarea name="description" rows={5} className="input" /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><label className="label">Price</label><input name="price" type="number" step="0.01" min="0" required className="input" /></div>
-          <div><label className="label">Currency</label><input name="currency" defaultValue="USD" className="input" /></div>
-        </div>
         <div><label className="label">Thumbnail URL</label><input name="thumbnail_url" className="input" placeholder="https://…" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><label className="label">Status</label><select name="status" className="input"><option value="draft">draft</option><option value="published">published</option><option value="archived">archived</option></select></div>

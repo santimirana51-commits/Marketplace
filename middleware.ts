@@ -9,7 +9,7 @@ function loginRedirect(req: NextRequest) {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isProtected = pathname.startsWith('/account') || pathname.startsWith('/admin');
+  const isProtected = pathname.startsWith('/admin');
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   // Fail-closed without ever throwing: if env is missing (e.g. env-less
@@ -38,4 +38,4 @@ export async function middleware(req: NextRequest) {
   }
 }
 
-export const config = { matcher: ['/account/:path*', '/admin/:path*'] };
+export const config = { matcher: ['/admin/:path*'] };

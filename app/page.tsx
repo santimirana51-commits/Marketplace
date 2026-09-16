@@ -5,13 +5,12 @@ import { NAV_CATS } from '@/lib/nav';
 
 type P = {
   title: string; slug: string; short_description?: string | null;
-  price: number | string; currency: string;
   thumbnail_url?: string | null; featured?: boolean | null;
 };
 
 export const metadata = {
-  title: 'Pixelbay — Download Digital Instan',
-  description: 'Template, aset desain, PDF, dan script. Bayar aman, dapat link download privat — tanpa URL publik.',
+  title: 'Pixelbay — Berbagi File Download Gratis',
+  description: 'Portal berbagi file: template, aset desain, PDF, dan script. Klik, unduh, gratis — tanpa daftar.',
 };
 
 const TILES = [
@@ -22,23 +21,23 @@ const TILES = [
 ];
 
 const STEPS = [
-  { n: '1', title: 'Pilih file-nya', text: 'Jelajahi katalog atau cari. File gratis bertanda hijau, yang premium harganya jelas.' },
-  { n: '2', title: 'Bayar dengan aman', text: 'QRIS, transfer bank, e-wallet, atau kartu. File gratis cukup masuk akun — tanpa bayar.' },
-  { n: '3', title: 'Unduh langsung', text: 'Dapatkan link privat kedaluwarsa di akun Anda. Unduh ulang selama masih berlaku.' },
+  { n: '1', title: 'Cari file-nya', text: 'Jelajahi katalog atau ketik kata kunci. Semua file gratis dan terbuka.' },
+  { n: '2', title: 'Klik unduh', text: 'Tanpa daftar, tanpa bayar, tanpa antre. Satu klik langsung jalan.' },
+  { n: '3', title: 'File tersimpan', text: 'File terunduh ke perangkat Anda. Bagikan halaman produk ke teman bila bermanfaat.' },
 ];
 
 const FEATURES = [
-  { icon: '🔒', title: 'Pengiriman privat', text: 'File mengalir dari penyimpanan aman lewat token hash kedaluwarsa. Tanpa link publik.' },
-  { icon: '⚡', title: 'Fulfillment instan', text: 'Pesanan bayar terkonfirmasi webhook sekitar semenit. Pesanan gratis langsung jadi.' },
-  { icon: '🛡️', title: 'Perlindungan pembeli', text: 'Harga dan pembayaran terverifikasi server. Yang terlihat itulah yang didapat.' },
+  { icon: '🆓', title: '100% gratis', text: 'Semua file bebas diunduh. Tidak ada harga, keranjang, atau pembayaran.' },
+  { icon: '⚡', title: 'Langsung jalan', text: 'Tanpa akun dan tanpa tunggu. Klik tombol unduh, file mengalir detik itu juga.' },
+  { icon: '🔒', title: 'Link aman', text: 'File disalurkan server — ID Drive asli tidak pernah diekspos ke publik.' },
 ];
 
 const FAQS = [
-  { q: 'Bagaimana cara menerima file saya?', a: 'Setelah checkout, buka Akun Saya → pesanan Anda → Unduh. Tiap file dapat link privat yang kedaluwarsa setelah 72 jam atau 5× unduhan (mana yang dulu).' },
-  { q: 'Benarkah ada file gratis?', a: 'Ya. Produk bertanda Gratis hanya butuh masuk akun — tanpa bayar, pengiriman sama amannya dengan file berbayar.' },
-  { q: 'Pembayaran apa saja yang diterima?', a: 'QRIS, virtual account bank, e-wallet, dan kartu via Midtrans, diproses dalam IDR. Kartu internasional via Stripe bila tersedia.' },
-  { q: 'Bisakah unduh ulang nanti?', a: 'Bisa, selama link masih berlaku. Butuh lagi setelahnya? Hubungi kami dari email akun Anda.' },
-  { q: 'Apakah dapat file sumbernya?', a: 'Anda dapat persis file yang terdaftar di halaman produk (nama, tipe, dan ukuran tampil sebelum bayar).' },
+  { q: 'Apakah perlu daftar akun?', a: 'Tidak. Semua file bisa diunduh langsung tanpa login dan tanpa bayar.' },
+  { q: 'Apakah ada batas unduhan?', a: 'Ada batas wajar per IP agar server tetap kencang untuk semua. Tunggu sebentar lalu coba lagi bila terkena batas.' },
+  { q: 'File apa saja yang tersedia?', a: 'Template, aset desain, PDF, dokumen, dan script — lihat nama, tipe, dan ukuran tiap file di halaman produk sebelum mengunduh.' },
+  { q: 'Bolehkah membagikan ulang file?', a: 'Bagikan halaman produknya, bukan file mentahnya — supaya penghitung unduhan dan pembaruan tetap akurat.' },
+  { q: 'File rusak / link mati?', a: 'Laporkan judul produknya lewat halaman kontak admin — file akan diperbaiki.' },
 ];
 
 function countFor(products: P[], q: string) {
@@ -60,11 +59,11 @@ export default async function Home() {
             <span className="h-2 w-2 rounded-full bg-green-500" /> {products.length} produk digital live
           </Link>
           <h1 className="mx-auto mt-5 max-w-4xl text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-            File premium.{' '}
-            <span className="bg-gradient-to-r from-brand-600 to-green-600 bg-clip-text text-transparent">Pengiriman instan.</span>
+            File gratis.{' '}
+            <span className="bg-gradient-to-r from-brand-600 to-green-600 bg-clip-text text-transparent">Unduh langsung.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-zinc-600 sm:text-lg">
-            Template, aset desain, PDF, dan script. Bayar aman, dapat link download privat — tanpa URL publik.
+            Template, aset desain, PDF, dan script. Klik, unduh, gratis — tanpa daftar, tanpa bayar.
           </p>
           <form action="/products" method="get" className="mx-auto mt-8 flex max-w-xl items-center gap-2 rounded-full border border-zinc-300 bg-white p-1.5 shadow-lg shadow-brand-600/5 focus-within:border-brand-500" role="search">
             <input name="q" type="search" placeholder="Coba “template”, “pdf”, “script”… " className="w-full bg-transparent px-4 py-2 text-base outline-none placeholder:text-zinc-400" aria-label="Cari produk" />
@@ -79,9 +78,9 @@ export default async function Home() {
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-zinc-600">
             <span>✅ <strong>{products.length}</strong> produk</span>
-            <span>🔒 Checkout aman</span>
-            <span>⚡ Terkonfirmasi ±1 menit</span>
-            <span>🎁 Ada file gratis</span>
+            <span>🆓 100% gratis</span>
+            <span>⚡ Unduh detik itu juga</span>
+            <span>🔒 Tanpa daftar</span>
           </div>
         </div>
       </section>
@@ -111,7 +110,7 @@ export default async function Home() {
           <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">Lihat semua →</Link>
         </div>
         <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {featured.length ? featured.map((p) => <ProductCard key={p.slug} p={{ ...p, price: Number(p.price) }} />) : <p className="text-sm text-zinc-500">Belum ada produk unggulan.</p>}
+          {featured.length ? featured.map((p) => <ProductCard key={p.slug} p={p} />) : <p className="text-sm text-zinc-500">Belum ada produk unggulan.</p>}
         </div>
       </section>
 
@@ -122,7 +121,7 @@ export default async function Home() {
           <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">Lihat semua →</Link>
         </div>
         <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {latest.length ? latest.map((p) => <ProductCard key={p.slug} p={{ ...p, price: Number(p.price) }} />) : <p className="text-sm text-zinc-500">Belum ada produk. Tambahkan dari /admin.</p>}
+          {latest.length ? latest.map((p) => <ProductCard key={p.slug} p={p} />) : <p className="text-sm text-zinc-500">Belum ada produk. Tambahkan dari /admin.</p>}
         </div>
       </section>
 
@@ -173,8 +172,8 @@ export default async function Home() {
       {/* CTA */}
       <section className="container-x mt-14">
         <div className="card flex flex-col items-center gap-3 bg-gradient-to-r from-brand-700 to-green-700 text-white sm:flex-row sm:justify-between">
-          <div><p className="text-lg font-bold">Siap ambil file Anda?</p><p className="text-sm text-white/80">Cari di katalog — file gratis cukup masuk akun.</p></div>
-          <Link href="/products" className="btn-download !bg-white !text-green-700 hover:!bg-green-50">Mulai belanja</Link>
+          <div><p className="text-lg font-bold">Siap ambil file Anda?</p><p className="text-sm text-white/80">Cari di katalog — klik unduh, file langsung tersimpan.</p></div>
+          <Link href="/products" className="btn-download !bg-white !text-green-700 hover:!bg-green-50">Jelajahi file</Link>
         </div>
       </section>
     </div>

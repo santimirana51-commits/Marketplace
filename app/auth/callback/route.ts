@@ -14,5 +14,5 @@ export async function GET(req: Request) {
     );
     await supabase.auth.exchangeCodeForSession(code);
   }
-  redirect('/account');
+  redirect('/admin');
 }

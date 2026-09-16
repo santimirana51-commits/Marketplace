@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'password' | 'otp'>('password');
-  const [email, setEmail] = useState('adminmarketplace@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -21,7 +21,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${window.location.origin}/account` },
+        options: { emailRedirectTo: `${window.location.origin}/admin` },
       });
       if (error) setError(error.message);
       else setSent(true);
@@ -41,12 +41,12 @@ export default function LoginPage() {
       if (action === 'in') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) setError(error.message);
-        else window.location.href = '/account';
+        else window.location.href = '/admin';
       } else {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) setError(error.message);
         else if (!data.session) setNotice('Account created. If email confirmation is on, check your inbox — or ask Supabase admin to confirm you, then sign in.');
-        else window.location.href = '/account';
+        else window.location.href = '/admin';
       }
     } finally {
       setBusy(false);

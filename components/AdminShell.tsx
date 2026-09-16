@@ -6,8 +6,6 @@ import { useState } from 'react';
 const NAV = [
   { label: 'Dashboard', href: '/admin', icon: <IconGrid /> },
   { label: 'Products', href: '/admin/products', icon: <IconBox /> },
-  { label: 'Orders', href: '/admin/orders', icon: <IconCart /> },
-  { label: 'Customers', href: '/admin/customers', icon: <IconUsers /> },
 ];
 
 function itemCls(active: boolean) {
