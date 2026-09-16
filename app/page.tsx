@@ -73,6 +73,18 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Image tool */}
+      <section className="container-x mt-8">
+        <div className="flex flex-col gap-4 rounded-2xl border border-brand-200 bg-brand-50 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-600">Tool gratis Pixelbay</p>
+            <h2 className="mt-1 text-xl font-extrabold text-brand-900">Ubah gambar menjadi SVG</h2>
+            <p className="mt-1 max-w-2xl text-sm text-zinc-600">Vectorize PNG, JPG, dan BMP dengan preview, pengaturan warna, simplify paths, serta batch processing langsung di browser.</p>
+          </div>
+          <Link href="/tools/image-converter" className="btn-primary shrink-0">Buka Image Converter</Link>
+        </div>
+      </section>
+
       {/* Category tiles */}
       <section className="container-x mt-12">
         <div className="flex items-end justify-between">
